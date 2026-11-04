@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="宮古南">
 <meta name="robots" content="noindex,nofollow">
-<link rel="manifest" href="app.webmanifest">
+<link rel="manifest" id="mf" href="app.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@700;900&family=Noto+Sans+JP:wght@400;500;700&family=Poppins:wght@500;600&display=swap">
@@ -224,10 +224,21 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--ink);outline-offset
     var m = location.hash.match(/k=([A-Za-z0-9_-]+)/);
     if (m) { key = m[1]; try { localStorage.setItem('miyakoKey', key); } catch (e) {} }
     else { try { key = localStorage.getItem('miyakoKey') || ''; } catch (e) {} }
+    // ホーム画面に追加したアイコンからも鍵付きで開けるよう、URLと起動先（manifest）に鍵を入れておく
+    if (key) {
+      var base = location.origin + location.pathname.replace(/index\.html$/, '');
+      if (!m) { try { history.replaceState(null, '', base + '#k=' + key); } catch (e) {} }
+      try {
+        var mf = { name: '宮古南スタッフ', short_name: '宮古南', start_url: base + '#k=' + key, scope: base, display: 'standalone',
+          background_color: '#EEEEEE', theme_color: '#000000',
+          icons: [{ src: base + 'app-icon-192.png', sizes: '192x192', type: 'image/png' }, { src: base + 'app-icon-512.png', sizes: '512x512', type: 'image/png' }] };
+        document.getElementById('mf').href = 'data:application/manifest+json;charset=utf-8,' + encodeURIComponent(JSON.stringify(mf));
+      } catch (e) {}
+    }
     var salesEl = document.getElementById('sales'), revEl = document.getElementById('reviews');
     var yen = function (n) { return '¥' + Math.round(n).toLocaleString('ja-JP'); };
     var md = function (d) { var p = d.split('-'); return Number(p[1]) + '/' + Number(p[2]); };
-    var noKey = '<div class="muted">売上と口コミは、店から配られたURL（鍵付き）で開くと表示されます。</div>';
+    var noKey = '<div class="muted">売上と口コミは、店の説明書のQRコードから開くと表示されます。ホーム画面のアイコンで出ないときは、アイコンを一度消して、QRから開き直してから「ホーム画面に追加」してください。</div>';
     if (!key || !(window.crypto && crypto.subtle)) { salesEl.innerHTML = noKey; revEl.innerHTML = noKey; return; }
     var b64 = function (s) { s = s.replace(/-/g, '+').replace(/_/g, '/'); while (s.length % 4) s += '='; var bin = atob(s), u = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u; };
     fetch('data.enc.json?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (enc) {

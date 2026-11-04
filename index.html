@@ -63,6 +63,27 @@ a.row{cursor:pointer}
 .row .chev{color:var(--muted);font-family:var(--en)}
 .row.off{opacity:.55}
 .copy{flex:none;border:1px solid var(--ink);background:var(--panel);color:var(--ink);padding:5px 14px;font:inherit;font-size:12px;font-weight:700;cursor:pointer}
+.kpi{display:flex;flex-direction:column;gap:10px}
+.kpi .big{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.kpi .big b{font-family:var(--en);font-size:34px;font-weight:600;color:var(--ink);line-height:1.1;font-variant-numeric:tabular-nums}
+.kpi .big span{font-size:13px;color:var(--ink2)}
+.meter{height:10px;background:var(--line);position:relative}
+.meter i{position:absolute;left:0;top:0;bottom:0;background:var(--ink)}
+.meter s{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--muted)}
+.kv{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px}
+.kv div{display:flex;flex-direction:column;border-top:1px solid var(--line);padding-top:6px}
+.kv small{font-size:11.5px;color:var(--muted)}
+.kv b{font-family:var(--en);font-size:17px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+.kv em{font-style:normal;font-size:12px;color:var(--ink2)}
+.rv{display:flex;flex-direction:column;gap:10px}
+.rv .head{display:flex;align-items:baseline;gap:10px}
+.rv .head b{font-family:var(--en);font-size:28px;font-weight:600;color:var(--ink)}
+.rv .item{border-top:1px solid var(--line);padding-top:8px}
+.stars{font-size:13px;letter-spacing:1px;color:var(--ink)}
+.stars.low{color:#B23A2A}
+.rv .lang{font-size:11px;color:var(--muted);margin-left:6px}
+.rv p{margin:2px 0 0;font-size:14px;color:var(--ink2);line-height:1.6}
+.updated{font-size:11px;color:var(--muted);text-align:right}
 .hint{font-size:12px;color:var(--muted);text-align:center;padding-top:4px}
 a:focus-visible,button:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
 </style>
@@ -76,6 +97,9 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--ink);outline-offset
     <h1 id="hello">おつかれさまです</h1>
     <div class="sub" id="today"></div>
   </header>
+
+  <section class="card" id="salesCard" aria-labelledby="h-sales"><h2 id="h-sales">今月の売上<span class="en">Sales</span></h2><div id="sales" class="kpi"><div class="muted">読み込んでいます…</div></div></section>
+  <section class="card" id="reviewCard" aria-labelledby="h-rev"><h2 id="h-rev">昨日の口コミ<span class="en">Reviews</span></h2><div id="reviews" class="rv"><div class="muted">読み込んでいます…</div></div></section>
 
   <section class="card" aria-labelledby="h-plan">
     <h2 id="h-plan">今日と今週の予定<span class="en">Schedule</span></h2>
@@ -194,6 +218,53 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--ink);outline-offset
   var html = ev.map(function (e) { return '<div class="ev now"><div class="when">' + esc(e[0]) + '</div><div><b>' + esc(e[1]) + '</b><small>' + esc(e[2]) + '</small></div></div>'; }).join('');
   html += next.map(function (n) { return '<div class="ev"><div class="when">' + esc(n[1]) + '</div><div><b>' + esc(n[2]) + '</b><small>あと' + n[0] + '日</small></div></div>'; }).join('');
   document.getElementById('agenda').innerHTML = html || '<div class="muted">今週の決まった予定はありません</div>';
+  // 売上・口コミ（毎朝作る鍵付きデータ data.enc.json を読む。鍵は URL の #k=）
+  (function () {
+    var key = '';
+    var m = location.hash.match(/k=([A-Za-z0-9_-]+)/);
+    if (m) { key = m[1]; try { localStorage.setItem('miyakoKey', key); } catch (e) {} }
+    else { try { key = localStorage.getItem('miyakoKey') || ''; } catch (e) {} }
+    var salesEl = document.getElementById('sales'), revEl = document.getElementById('reviews');
+    var yen = function (n) { return '¥' + Math.round(n).toLocaleString('ja-JP'); };
+    var md = function (d) { var p = d.split('-'); return Number(p[1]) + '/' + Number(p[2]); };
+    var noKey = '<div class="muted">売上と口コミは、店から配られたURL（鍵付き）で開くと表示されます。</div>';
+    if (!key || !(window.crypto && crypto.subtle)) { salesEl.innerHTML = noKey; revEl.innerHTML = noKey; return; }
+    var b64 = function (s) { s = s.replace(/-/g, '+').replace(/_/g, '/'); while (s.length % 4) s += '='; var bin = atob(s), u = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u; };
+    fetch('data.enc.json?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (enc) {
+      return crypto.subtle.importKey('raw', b64(key), 'AES-GCM', false, ['decrypt']).then(function (k) {
+        return crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64(enc.iv) }, k, b64(enc.ct));
+      });
+    }).then(function (buf) {
+      var d = JSON.parse(new TextDecoder().decode(buf));
+      var s = d.sales, y = s.yesterday, h = '';
+      if (s.target) {
+        var pct = Math.min(100, s.progress || 0);
+        var pace = s.days && s.days_in_month ? s.days / s.days_in_month * 100 : null;
+        h += '<div class="big"><b>' + s.progress + '%</b><span>目標 ' + yen(s.target) + ' のうち、いま ' + yen(s.total) + '（' + s.days + '日分）</span></div>';
+        h += '<div class="meter" role="img" aria-label="目標に対して' + s.progress + '%"><i style="width:' + pct + '%"></i></div>';
+      } else {
+        h += '<div class="big"><b>' + yen(s.total) + '</b><span>今月の累計（' + s.days + '日分）</span></div>';
+      }
+      h += '<div class="kv">';
+      if (s.landing) h += '<div><small>このペースだと月末</small><b>' + yen(s.landing) + '</b><em>' + (s.landing_rate ? '目標の ' + s.landing_rate + '%' : '') + '</em></div>';
+      if (y) h += '<div><small>昨日（' + md(y.date) + '）の売上</small><b>' + yen(y.sales) + '</b><em>' + (y.target ? '日の目標 ' + yen(y.target) + '・' + Math.round(y.sales / y.target * 100) + '%' : '') + (y.guests ? '　' + y.guests + '名' : '') + '</em></div>';
+      h += '</div><div class="updated">' + d.updated + ' 更新（税抜）</div>';
+      salesEl.innerHTML = h;
+      var r = d.reviews, rh = '';
+      var star = function (n) { n = Math.round(n); return '★★★★★'.slice(0, n) + '☆☆☆☆☆'.slice(0, 5 - n); };
+      if (!r.count) rh = '<div class="muted">' + md(r.date) + 'の口コミはありませんでした。</div>';
+      else {
+        rh += '<div class="head"><b>' + r.count + '件</b><span class="muted">' + md(r.date) + '・平均 ★' + Number(r.avg).toFixed(1) + '</span></div>';
+        r.items.forEach(function (it) {
+          rh += '<div class="item"><span class="stars' + (it.star <= 2 ? ' low' : '') + '">' + star(it.star) + '</span><span class="lang">' + esc(it.lang || '') + '</span><p>' + esc(it.text) + '</p></div>';
+        });
+      }
+      revEl.innerHTML = rh;
+    }).catch(function () {
+      var e = '<div class="muted">読み込めませんでした。URLの鍵が古いか、通信が切れています。</div>';
+      salesEl.innerHTML = e; revEl.innerHTML = e;
+    });
+  })();
 })();
 </script>
 </body>

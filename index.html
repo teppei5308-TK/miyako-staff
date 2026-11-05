@@ -15,7 +15,9 @@
 <style>
 /* creative-r.com に合わせる：#EEEEEE の地、黒文字、角のない黒ボタン、太ゴシック見出し、英字は Poppins */
 :root{color-scheme:light;
-  --ground:#EEEEEE;--panel:#FFFFFF;--ink:#000000;--ink2:#333333;--muted:#666666;--line:#DBE1E1;
+  --ground:#F6F5F1;--panel:#FFFFFF;--ink:#000000;--ink2:#333333;--muted:#666666;--line:#E6E8E6;
+  --sun:#FFB400;--sun-ink:#8A5A00;--sun-soft:#FFF3D1;
+  --sky:#2C7CC4;--sky-soft:#E3F0FB;--mint:#1E8E62;--mint-soft:#DDF3E9;--coral:#D9572B;--coral-soft:#FCE6DC;
   --accent:#000000;--accent-ink:#FFFFFF;--accent-soft:#DBE1E1;--sage:#C1CCCB;--gold-soft:#F1EEE4;--warn:#7A5A12;
   --jp:"Noto Sans JP","Hiragino Kaku Gothic ProN","Hiragino Sans",sans-serif;
   --head:"Zen Kaku Gothic New","Hiragino Kaku Gothic ProN","Hiragino Sans",sans-serif;
@@ -25,7 +27,7 @@
 html,body{margin:0}
 body{background:var(--ground);color:var(--ink2);font-family:var(--jp);font-size:16px;line-height:1.7;-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent}
 .wrap{max-width:560px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 16px) max(16px,env(safe-area-inset-right)) calc(env(safe-area-inset-bottom) + 40px) max(16px,env(safe-area-inset-left));display:flex;flex-direction:column;gap:14px}
-header{display:flex;flex-direction:column;gap:6px;padding-bottom:6px;border-bottom:1px solid var(--sage)}
+header{display:flex;flex-direction:column;gap:6px;padding-bottom:10px;border-bottom:3px solid var(--sun)}
 .logo{display:block;width:150px;height:auto}
 .brand{font-family:var(--en);font-size:11px;letter-spacing:.18em;color:var(--muted);font-weight:600;text-transform:uppercase;margin-top:6px}
 .store{font-family:var(--head);font-size:13px;font-weight:700;color:var(--ink2)}
@@ -33,11 +35,11 @@ h1{font-family:var(--head);font-size:24px;font-weight:900;margin:0;line-height:1
 .sub{font-size:13px;color:var(--ink2)}
 .card{background:var(--panel);padding:16px 16px 12px}
 .card h2{font-family:var(--head);font-size:15px;font-weight:900;color:var(--ink);margin:0 0 10px;display:flex;align-items:baseline;gap:10px}
-.card h2 .en{font-family:var(--en);font-size:10.5px;font-weight:600;letter-spacing:.16em;color:var(--muted);text-transform:uppercase}
+.card h2 .en{font-family:var(--en);font-size:10.5px;font-weight:600;letter-spacing:.16em;color:var(--sun-ink);text-transform:uppercase}
 .agenda{display:flex;flex-direction:column;gap:10px}
 .ev{display:grid;grid-template-columns:58px 1fr;gap:10px;align-items:start}
 .ev .when{font-size:12px;font-weight:700;color:var(--muted);padding-top:2px}
-.ev.now .when{color:var(--ink)}
+.ev.now .when{color:var(--sun-ink)}
 .ev b{font-family:var(--head);font-weight:700;font-size:15px;color:var(--ink)}
 .ev small{display:block;font-size:12px;color:var(--ink2)}
 .muted{color:var(--muted);font-size:13px}
@@ -49,10 +51,15 @@ h1{font-family:var(--head);font-size:24px;font-weight:900;margin:0;line-height:1
 .tile b{font-family:var(--head);font-size:16px;font-weight:900;line-height:1.35}
 .tile small{display:block;font-size:12px;color:var(--ink2);font-weight:400;margin-top:2px}
 .tile.main{background:var(--accent);color:var(--accent-ink)}
-.tile.main .ic{background:rgba(255,255,255,.14);color:var(--accent-ink)}
+.tile.main .ic{background:var(--sun);color:#000}
 .tile.wide{grid-column:1/-1;min-height:0;flex-direction:row;align-items:center;justify-content:flex-start;gap:14px}
 .tile.wide .ic{width:40px;height:40px}
 .tile.main small{color:var(--accent-ink);opacity:.8}
+.c-sky .ic{background:var(--sky-soft)!important;color:var(--sky)!important}
+.c-mint .ic{background:var(--mint-soft)!important;color:var(--mint)!important}
+.c-coral .ic{background:var(--coral-soft)!important;color:var(--coral)!important}
+.c-sun .ic{background:var(--sun-soft)!important;color:var(--sun-ink)!important}
+.tile.c-sky{border-top:4px solid var(--sky)}.tile.c-mint{border-top:4px solid var(--mint)}.tile.c-coral{border-top:4px solid var(--coral)}.tile.c-sun{border-top:4px solid var(--sun)}
 .badge{display:inline-block;font-size:11px;font-weight:700;padding:1px 8px;margin-left:6px;vertical-align:2px;background:var(--gold-soft);color:var(--warn)}
 .list{display:flex;flex-direction:column}
 .row{display:flex;align-items:center;gap:12px;padding:12px 2px;border-top:1px solid var(--line);color:var(--ink);text-decoration:none;font-size:15px;background:none;border-left:0;border-right:0;border-bottom:0;font-family:inherit;text-align:left;width:100%}
@@ -64,13 +71,13 @@ a.row{cursor:pointer}
 .row .t small{display:block;color:var(--muted);font-size:12px;line-height:1.4;font-weight:400}
 .row .chev{color:var(--muted);font-family:var(--en)}
 .row.off{opacity:.55}
-.copy{flex:none;border:1px solid var(--ink);background:var(--panel);color:var(--ink);padding:5px 14px;font:inherit;font-size:12px;font-weight:700;cursor:pointer}
+.copy{flex:none;border:1px solid var(--sun);background:var(--sun-soft);color:var(--sun-ink);padding:5px 14px;font:inherit;font-size:12px;font-weight:700;cursor:pointer}
 .kpi{display:flex;flex-direction:column;gap:10px}
 .kpi .big{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
 .kpi .big b{font-family:var(--en);font-size:34px;font-weight:600;color:var(--ink);line-height:1.1;font-variant-numeric:tabular-nums}
 .kpi .big span{font-size:13px;color:var(--ink2)}
 .meter{height:10px;background:var(--line);position:relative}
-.meter i{position:absolute;left:0;top:0;bottom:0;background:var(--ink)}
+.meter i{position:absolute;left:0;top:0;bottom:0;background:var(--sun)}
 .meter s{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--muted)}
 .kv{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px}
 .kv div{display:flex;flex-direction:column;border-top:1px solid var(--line);padding-top:6px}
@@ -81,7 +88,7 @@ a.row{cursor:pointer}
 .rv .head{display:flex;align-items:baseline;gap:10px}
 .rv .head b{font-family:var(--en);font-size:28px;font-weight:600;color:var(--ink)}
 .rv .item{border-top:1px solid var(--line);padding-top:8px}
-.stars{font-size:13px;letter-spacing:1px;color:var(--ink)}
+.stars{font-size:13px;letter-spacing:1px;color:var(--sun)}
 .stars.low{color:#B23A2A}
 .rv .lang{font-size:11px;color:var(--muted);margin-left:6px}
 .rv p{margin:2px 0 0;font-size:14px;color:var(--ink2);line-height:1.6}
@@ -141,10 +148,10 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--ink);outline-offset
   // メインのボタン（毎日使うもの）
   var MAIN = [
     { cls: 'main wide', ic: 'check', t: 'ルーティンチェック', s: '開店・閉店（ホール／キッチン）。送るとチャットに通知', go: 'routine.html', self: true },
-    { ic: 'camera', t: '仕入伝票の写真', s: '納品のたびに撮って送る', go: WS + 'IBXmB2IHhHc_m1Se0AsHkA' },
-    { ic: 'meat', t: '肉在庫の確認', s: 'もとぶ牧場との共有に届く', go: WS + 'jADFsSwuournXIWIm7NKAw' },
-    { ic: 'bowl', t: '賄いチェック', s: '退勤時に（QRと同じ）', go: WS + '95vWJ_rtlGXL_MCdVBLNUQ' },
-    { ic: 'chart', t: 'デイリーコックピット', s: '全店の前日の売上', go: 'https://claude.ai/code/artifact/cca90ac8-902f-4178-80dc-7b10fd86f6f4' }
+    { c: 'sky', ic: 'camera', t: '仕入伝票の写真', s: '納品のたびに撮って送る', go: WS + 'IBXmB2IHhHc_m1Se0AsHkA' },
+    { c: 'coral', ic: 'meat', t: '肉在庫の確認', s: 'もとぶ牧場との共有に届く', go: WS + 'jADFsSwuournXIWIm7NKAw' },
+    { c: 'sun', ic: 'bowl', t: '賄いチェック', s: '退勤時に（QRと同じ）', go: WS + '95vWJ_rtlGXL_MCdVBLNUQ' },
+    { c: 'mint', ic: 'chart', t: 'デイリーコックピット', s: '全店の前日の売上', go: 'https://claude.ai/code/artifact/cca90ac8-902f-4178-80dc-7b10fd86f6f4' }
   ];
   // [アイコン, 名前, 説明, URL（空＝未登録）, 種類]
   var LISTS = {
@@ -157,10 +164,7 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--ink);outline-offset
       ['camera', 'メニュー写真スタジオ', '料理写真をメニュー用の黒背景にする', 'https://menu-photo-studio.grace-terra.chatgpt.site/']
     ],
     docList: [
-      ['book', 'ホールマニュアル・OJT', '9つの場面とL1〜L4のチェック表', 'https://claude.ai/artifact/H2UV3VZ1CHidGMPi8xiRiT'],
-      ['book', '口コミレポート', '口コミから見えた強みと直すところ', 'https://claude.ai/artifact/Cahk9mLRaFNJdaPuN2kBWc'],
-      ['book', 'メニューABC分析', 'よく出る品・利益の出る品', 'https://claude.ai/artifact/UzPjfzrEcdxWisJam32kAB'],
-      ['book', '公式サイト', 'お客様向け（採用ページあり）', 'https://tettou-tetsubi.com/']
+      ['book', 'ホールマニュアル・OJT', '9つの場面とL1〜L4のチェック表', 'https://claude.ai/artifact/H2UV3VZ1CHidGMPi8xiRiT']
     ]
   };
 
@@ -176,7 +180,7 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--ink);outline-offset
   var box = document.getElementById('mainTiles');
   MAIN.forEach(function (m) {
     var a = document.createElement('a');
-    a.className = 'tile' + (m.cls ? ' ' + m.cls : '');
+    a.className = 'tile' + (m.cls ? ' ' + m.cls : '') + (m.c ? ' c-' + m.c : '');
     if (m.self) {
       var hk = (location.hash.match(/k=([A-Za-z0-9_-]+)/) || [])[1];
       if (!hk) { try { hk = localStorage.getItem('miyakoKey') || ''; } catch (e) {} }
@@ -187,8 +191,10 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--ink);outline-offset
   });
 
   // 一覧
+  var LIST_COLOR = { staffList: 'mint', toolList: 'sky', docList: 'coral' };
   Object.keys(LISTS).forEach(function (id) {
     var list = document.getElementById(id);
+    list.classList.add('c-' + LIST_COLOR[id]);
     LISTS[id].forEach(function (r) {
       var ic = r[0], t = r[1], s = r[2], url = r[3], mode = r[4];
       var inner = '<span class="ic">' + ICON[ic] + '</span><span class="t">' + esc(t) + (url ? '' : '<span class="badge">未登録</span>') + '<small>' + esc(s) + '</small></span>';

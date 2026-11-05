@@ -50,6 +50,8 @@ h1{font-family:var(--head);font-size:24px;font-weight:900;margin:0;line-height:1
 .tile small{display:block;font-size:12px;color:var(--ink2);font-weight:400;margin-top:2px}
 .tile.main{background:var(--accent);color:var(--accent-ink)}
 .tile.main .ic{background:rgba(255,255,255,.14);color:var(--accent-ink)}
+.tile.wide{grid-column:1/-1;min-height:0;flex-direction:row;align-items:center;justify-content:flex-start;gap:14px}
+.tile.wide .ic{width:40px;height:40px}
 .tile.main small{color:var(--accent-ink);opacity:.8}
 .badge{display:inline-block;font-size:11px;font-weight:700;padding:1px 8px;margin-left:6px;vertical-align:2px;background:var(--gold-soft);color:var(--warn)}
 .list{display:flex;flex-direction:column}
@@ -131,13 +133,15 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--ink);outline-offset
     yen: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 4 6 8 6-8M12 12v8M7 13h10M7 17h10"/></svg>',
     gear: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></svg>',
     book: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2Z"/><path d="M4 19V5"/></svg>',
+    check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18"/><path d="m8 12 2.5 2.5L16 9"/></svg>',
     people: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14c3 0 5 2 5 5"/></svg>'
   };
   var CHEV = '<span class="chev" aria-hidden="true">›</span>';
 
   // メインのボタン（毎日使うもの）
   var MAIN = [
-    { cls: 'main', ic: 'camera', t: '仕入伝票の写真', s: '納品のたびに撮って送る', go: WS + 'IBXmB2IHhHc_m1Se0AsHkA' },
+    { cls: 'main wide', ic: 'check', t: 'ルーティンチェック', s: '開店・閉店（ホール／キッチン）。送るとチャットに通知', go: 'routine.html', self: true },
+    { ic: 'camera', t: '仕入伝票の写真', s: '納品のたびに撮って送る', go: WS + 'IBXmB2IHhHc_m1Se0AsHkA' },
     { ic: 'meat', t: '肉在庫の確認', s: 'もとぶ牧場との共有に届く', go: WS + 'jADFsSwuournXIWIm7NKAw' },
     { ic: 'bowl', t: '賄いチェック', s: '退勤時に（QRと同じ）', go: WS + '95vWJ_rtlGXL_MCdVBLNUQ' },
     { ic: 'chart', t: 'デイリーコックピット', s: '全店の前日の売上', go: 'https://claude.ai/code/artifact/cca90ac8-902f-4178-80dc-7b10fd86f6f4' }
@@ -173,7 +177,11 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--ink);outline-offset
   MAIN.forEach(function (m) {
     var a = document.createElement('a');
     a.className = 'tile' + (m.cls ? ' ' + m.cls : '');
-    a.href = m.go; a.target = '_blank'; a.rel = 'noopener';
+    if (m.self) {
+      var hk = (location.hash.match(/k=([A-Za-z0-9_-]+)/) || [])[1];
+      if (!hk) { try { hk = localStorage.getItem('miyakoKey') || ''; } catch (e) {} }
+      a.href = m.go + (hk ? '#k=' + hk : '');
+    } else { a.href = m.go; a.target = '_blank'; a.rel = 'noopener'; }
     a.innerHTML = '<span class="ic">' + ICON[m.ic] + '</span><span><b>' + esc(m.t) + '</b><small>' + esc(m.s) + '</small></span>';
     box.appendChild(a);
   });

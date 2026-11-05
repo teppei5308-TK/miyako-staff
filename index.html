@@ -152,7 +152,8 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--ink);outline-offset
     { c: 'sky', ic: 'camera', t: '仕入伝票の写真', s: '納品のたびに撮って送る', go: WS + 'IBXmB2IHhHc_m1Se0AsHkA' },
     { c: 'coral', ic: 'meat', t: '肉在庫の確認', s: 'もとぶ牧場との共有に届く', go: WS + 'jADFsSwuournXIWIm7NKAw' },
     { c: 'sun', ic: 'bowl', t: '賄いチェック', s: '退勤時に（QRと同じ）', go: WS + '95vWJ_rtlGXL_MCdVBLNUQ' },
-    { c: 'mint', ic: 'chart', t: 'デイリーコックピット', s: '全店の前日の売上', go: 'https://claude.ai/code/artifact/cca90ac8-902f-4178-80dc-7b10fd86f6f4' }
+    { c: 'mint', ic: 'chart', t: 'デイリーコックピット', s: '全店の前日の売上', go: 'https://claude.ai/code/artifact/cca90ac8-902f-4178-80dc-7b10fd86f6f4' },
+    { c: 'sun', ic: 'people', t: '島民パスポート', s: '認定・使用の記録と今日の数（スタッフ用）', go: 'passport/staff.html', self: true }
   ];
   // [アイコン, 名前, 説明, URL（空＝未登録）, 種類]
   var LISTS = {
@@ -311,7 +312,7 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--ink);outline-offset
 <div class="newver" id="newVer" hidden><span id="newVerMsg">新しい版があります</span><button type="button" id="newVerBtn">更新する</button><button type="button" id="newVerClose" aria-label="閉じる" style="background:transparent;color:#fff;padding:9px 4px">✕</button></div>
 <script>
 (function () {
-  var VERSION = '2026-11-06d';  // 公開するたびに version.json と一緒に上げる
+  var VERSION = '2026-11-06e';  // 公開するたびに version.json と一緒に上げる
   function hardReload() {
     var hash = location.hash;
     if (!/k=/.test(hash)) { try { var k = localStorage.getItem('miyakoKey'); if (k) hash = '#k=' + k; } catch (e) {} }

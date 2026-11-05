@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>島民ランチパスポート</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#14110F">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="島民ランチ">
+<meta name="robots" content="noindex,nofollow">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap">
+<style>
+:root{color-scheme:light;
+  --bg:#F7F5F1;--surface:#FFFFFF;--ink:#1A1715;--muted:#5E584E;--line:#E2DBCD;
+  --hero:#14110F;--hero-ink:#F5F1E8;--gold:#E8CB8A;--gold-ink:#8A6A20;--red:#9B3A2E;--green:#3F7A2B;--green-soft:#E6F1E1;--red-soft:#F7E9E5;
+  --serif:"Noto Serif JP","Hiragino Mincho ProN","Yu Mincho",serif;--sans:"Noto Sans JP","Hiragino Sans","Yu Gothic",system-ui,sans-serif}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.75;-webkit-text-size-adjust:100%}
+.wrap{max-width:520px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 16px) max(18px,env(safe-area-inset-right)) calc(env(safe-area-inset-bottom) + 40px) max(18px,env(safe-area-inset-left));display:flex;flex-direction:column;gap:16px}
+.pass{background:var(--hero);color:var(--hero-ink);padding:22px 20px 20px;position:relative;overflow:hidden}
+.pass::after{content:"";position:absolute;right:-40px;top:-40px;width:160px;height:160px;border-radius:50%;border:1px solid #36302A}
+.k{font-size:.64rem;letter-spacing:.2em;color:var(--gold)}
+.pass h1{font-family:var(--serif);font-size:1.6rem;margin:6px 0 2px;color:var(--gold);line-height:1.3}
+.pass .term{font-size:.82rem;color:#C4BCAE}
+.badge{display:inline-block;margin-top:14px;padding:6px 12px;font-size:.82rem;font-weight:700;letter-spacing:.06em;background:#36302A;color:#C4BCAE}
+.badge.ok{background:var(--gold);color:#1A1715}
+.badge.ng{background:var(--red);color:#fff}
+.who{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;margin-top:18px;border-top:1px solid #36302A;padding-top:12px}
+.who .nm{font-family:var(--serif);font-size:1.25rem}
+.who .id{font-size:.8rem;color:#8E867C;letter-spacing:.08em}
+.amt{font-family:var(--serif);font-size:1.4rem;line-height:1.3;margin-top:8px}
+.amt b{color:var(--gold)}
+.uses{display:flex;gap:18px;font-size:.82rem;color:#C4BCAE;margin-top:8px}
+.uses b{color:#fff;font-size:1rem}
+.card{background:var(--surface);border:1px solid var(--line);padding:16px}
+.card h2{font-family:var(--serif);font-size:1rem;margin:0 0 8px;letter-spacing:.04em}
+.card p{margin:0;font-size:.92rem}
+ol{margin:0;padding-left:1.3em;font-size:.92rem}
+ol li{margin:4px 0}
+.today{background:var(--green-soft);color:var(--green);padding:10px 12px;font-weight:700;font-size:.92rem}
+.btn{border:0;background:var(--ink);color:#fff;font:inherit;font-size:16px;font-weight:700;padding:14px;cursor:pointer;width:100%}
+.btn[disabled]{background:#9a9a9a;cursor:default}
+.btn.sub{background:#fff;color:var(--ink);border:1px solid var(--ink)}
+.staff{border:2px dashed var(--line);padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.staff h2{font-size:.9rem;margin:0;color:var(--muted);letter-spacing:.06em}
+.staff input{font:inherit;font-size:18px;padding:12px;border:1px solid var(--line);width:100%;letter-spacing:.3em;text-align:center}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.msg{padding:10px 12px;font-size:.9rem;background:var(--red-soft);color:var(--red)}
+.msg.ok{background:var(--green-soft);color:var(--green)}
+.top{display:flex;justify-content:space-between;align-items:center;font-size:.8rem;color:var(--muted)}
+.top button{background:none;border:1px solid var(--line);font:inherit;font-size:.8rem;padding:6px 10px;cursor:pointer;color:var(--ink)}
+.muted{color:var(--muted);font-size:.85rem}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top"><span>焼肉ホルモン 徹頭徹尾 宮古南店</span><button type="button" id="reload">更新</button></div>
+
+  <div class="pass" id="pass">
+    <p class="k">YAKINIKU TETTOU TETSUBI — MIYAKOMINAMI</p>
+    <h1>島民ランチパスポート</h1>
+    <p class="term" id="term">12月1日 〜 2月28日</p>
+    <span class="badge" id="badge">読み込んでいます…</span>
+    <div class="who"><span class="nm" id="nm">　</span><span class="id" id="pid"></span></div>
+    <p class="amt">ランチ 何度でも <b>¥200 OFF</b></p>
+    <div class="uses"><span>使った回数 <b id="uses">-</b></span><span>最後に使った日 <b id="last">-</b></span></div>
+  </div>
+
+  <div class="today" id="today" hidden></div>
+  <div class="msg" id="msg" hidden></div>
+
+  <div class="card" id="noticeCard" hidden><h2>今週のお知らせ</h2><p id="notice"></p></div>
+
+  <div class="card"><h2>使い方</h2>
+    <ol>
+      <li><b>初回</b>：ご来店時に宮古島市の住所が分かるもの（免許証・保険証など）をスタッフへ。その場で「認定済み」になります。</li>
+      <li><b>2回目以降</b>：お会計のときにこの画面を見せてください。スタッフが「使用」を押します（1日1回）。</li>
+      <li>この画面をホーム画面に追加しておくと、次からすぐ開けます（iPhoneは共有ボタン→「ホーム画面に追加」）。</li>
+    </ol>
+  </div>
+
+  <div class="staff">
+    <h2>スタッフ用</h2>
+    <p class="muted" style="margin:0">お客様の身分証を確認してから「認定」。会計時は「使用」。</p>
+    <input id="pin" inputmode="numeric" autocomplete="off" placeholder="スタッフPIN">
+    <div class="row2"><button class="btn sub" id="certBtn" type="button">認定する</button><button class="btn" id="useBtn" type="button">使用を記録</button></div>
+  </div>
+
+  <p class="muted" id="lost">パスポートが見つからないときは <a href="./">発行ページ</a> の「再表示」から。</p>
+</div>
+
+<script>
+(function () {
+  var API = 'https://script.google.com/macros/s/AKfycbwUIszTlRW20wetQ6KWe-MOoSWiqkJmg6SzsDgK_tmiQ0oi76U0EYqH50UyTTkkMto/exec';
+  var $ = function (id) { return document.getElementById(id); };
+  var store = { get: function (k) { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch (e) { return null; } },
+                set: function (k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} } };
+  var m = location.hash.match(/p=(MP\d{4})\.([A-Za-z0-9]{6,20})/);
+  var pass = m ? { id: m[1], token: m[2] } : store.get('mpPass');
+  if (pass && pass.id) { store.set('mpPass', pass); if (!m) history.replaceState(null, '', '#p=' + pass.id + '.' + pass.token); }
+  var state = null;
+
+  function post(body) {
+    return fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body) }).then(function (r) { return r.json(); });
+  }
+  function show(text, ok) { var el = $('msg'); el.hidden = !text; el.textContent = text || ''; el.className = 'msg' + (ok ? ' ok' : ''); }
+  function jp(d) { if (!d) return '-'; var p = d.split('-'); return Number(p[1]) + '/' + Number(p[2]); }
+
+  function render(j) {
+    state = j; var p = j.pass, today = j.today;
+    $('nm').textContent = p.name + ' 様'; $('pid').textContent = p.id;
+    $('uses').textContent = p.uses + ' 回'; $('last').textContent = jp(p.lastUse);
+    var b = $('badge'); var expired = today > j.useTo;
+    if (expired) { b.textContent = '有効期限が過ぎました'; b.className = 'badge ng'; }
+    else if (p.certified) { b.textContent = '認定済み　有効'; b.className = 'badge ok'; }
+    else { b.textContent = '認定待ち（初回来店時にスタッフへ）'; b.className = 'badge'; }
+    var t = $('today'); t.hidden = true;
+    if (p.certified && p.lastUse === today) { t.hidden = false; t.textContent = '本日は使用済みです（1日1回）。またのご来店をお待ちしています'; }
+    else if (p.certified && today < j.useFrom) { t.hidden = false; t.textContent = '認定済みです。¥200 OFF は 12月1日 から使えます'; }
+    $('noticeCard').hidden = !j.notice; $('notice').textContent = j.notice || '';
+    $('certBtn').disabled = !!p.certified || expired; $('useBtn').disabled = !p.certified || expired || p.lastUse === today;
+  }
+
+  function load() {
+    if (!pass || !pass.id) { $('badge').textContent = 'パスポートがありません'; $('badge').className = 'badge ng'; show('発行ページから発行するか、「再表示」で開いてください'); return; }
+    $('badge').textContent = '読み込んでいます…';
+    post({ action: 'ppGet', id: pass.id, token: pass.token }).then(function (j) {
+      if (!j.ok) { $('badge').textContent = '見つかりません'; $('badge').className = 'badge ng'; show('パスポートが見つかりません。発行ページの「再表示」からもう一度開いてください'); return; }
+      show(''); render(j);
+    }).catch(function () { $('badge').textContent = '通信できません'; show('電波のよい場所で「更新」を押してください。画面はこのまま見せても大丈夫です'); });
+  }
+  $('reload').onclick = load;
+
+  function stamp(action, label) {
+    var pin = $('pin').value.trim();
+    if (!pin) { show('スタッフPINを入れてください'); return; }
+    $('certBtn').disabled = $('useBtn').disabled = true;
+    post({ action: action, id: pass.id, token: pass.token, pin: pin }).then(function (j) {
+      if (j.ok) { $('pin').value = ''; show(label + 'しました' + (j.already ? '（認定済みでした）' : ''), true); render({ pass: j.pass, today: state ? state.today : '', useFrom: state ? state.useFrom : '', useTo: state ? state.useTo : '9999', notice: state ? state.notice : '' }); return; }
+      var e = j.error;
+      show(e === 'pin' ? 'PINが違います' : e === 'notcertified' ? '先に「認定」をしてください' : e === 'usedtoday' ? '本日はすでに使用済みです' : e === 'period' ? '¥200 OFF が使えるのは ' + jp(j.useFrom) + '〜' + jp(j.useTo) + ' です' : '記録できませんでした（' + e + '）');
+      if (state) render(state);
+    }).catch(function () { show('通信できませんでした。電波のよい場所でもう一度'); if (state) render(state); });
+  }
+  $('certBtn').onclick = function () { stamp('ppCertify', '認定'); };
+  $('useBtn').onclick = function () { stamp('ppUse', '使用を記録'); };
+
+  load();
+  document.addEventListener('visibilitychange', function () { if (!document.hidden && pass) load(); });
+})();
+</script>
+</body>
+</html>

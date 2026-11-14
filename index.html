@@ -149,6 +149,7 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--ink);outline-offset
   // メインのボタン（毎日使うもの）
   var MAIN = [
     { cls: 'main wide', ic: 'check', t: 'ルーティンチェック', s: '開店・閉店（ホール／キッチン）。送るとチャットに通知', go: 'routine.html', self: true },
+    { c: 'mint', cls: 'wide', ic: 'clock', t: '勤怠チェック（店長タスク）', s: '前日の打刻もれ・ずれを確認して送信。1日1回', go: 'routine.html', self: true, tab: 'manager_kintai' },
     { c: 'sky', ic: 'camera', t: '仕入伝票の写真', s: '納品のたびに撮って送る', go: WS + 'IBXmB2IHhHc_m1Se0AsHkA' },
     { c: 'coral', ic: 'meat', t: '肉在庫の確認', s: 'もとぶ牧場との共有に届く', go: WS + 'jADFsSwuournXIWIm7NKAw' },
     { c: 'sun', ic: 'bowl', t: '賄いチェック', s: '退勤時に（QRと同じ）', go: WS + '95vWJ_rtlGXL_MCdVBLNUQ' },
@@ -186,7 +187,7 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--ink);outline-offset
     if (m.self) {
       var hk = (location.hash.match(/k=([A-Za-z0-9_-]+)/) || [])[1];
       if (!hk) { try { hk = localStorage.getItem('miyakoKey') || ''; } catch (e) {} }
-      a.href = m.go + (hk ? '#k=' + hk : '');
+      a.href = m.go + (hk ? '#k=' + hk + (m.tab ? '&t=' + m.tab : '') : (m.tab ? '#t=' + m.tab : ''));
     } else { a.href = m.go; a.target = '_blank'; a.rel = 'noopener'; }
     a.innerHTML = '<span class="ic">' + ICON[m.ic] + '</span><span><b>' + esc(m.t) + '</b><small>' + esc(m.s) + '</small></span>';
     box.appendChild(a);
@@ -312,7 +313,7 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--ink);outline-offset
 <div class="newver" id="newVer" hidden><span id="newVerMsg">新しい版があります</span><button type="button" id="newVerBtn">更新する</button><button type="button" id="newVerClose" aria-label="閉じる" style="background:transparent;color:#fff;padding:9px 4px">✕</button></div>
 <script>
 (function () {
-  var VERSION = '2026-11-07a';  // 公開するたびに version.json と一緒に上げる
+  var VERSION = '2026-11-14a';  // 公開するたびに version.json と一緒に上げる
   function hardReload() {
     var hash = location.hash;
     if (!/k=/.test(hash)) { try { var k = localStorage.getItem('miyakoKey'); if (k) hash = '#k=' + k; } catch (e) {} }

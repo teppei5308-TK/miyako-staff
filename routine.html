@@ -35,6 +35,8 @@ h1{font-family:var(--head);font-size:22px;font-weight:900;margin:0;color:var(--i
 .tab small{font-size:11.5px;font-weight:500;color:var(--muted)}
 .tab[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff;box-shadow:inset 0 -4px 0 var(--sun)}
 .tab[aria-pressed="true"] small{color:#ddd}
+.tab.wide{grid-column:1/-1}
+.listlink{display:block;margin:0 0 6px;padding:10px 12px;background:var(--sun-soft);border:1px solid var(--sun);color:var(--ink);font-size:14px;font-weight:700;text-decoration:none}
 .tab .done{color:var(--ok);font-weight:700}
 .tab[aria-pressed="true"] .done{color:#9fe0c9}
 .name{display:flex;gap:8px;align-items:center}
@@ -93,6 +95,7 @@ textarea{width:100%;font:inherit;font-size:15px;padding:9px 10px;border:1px soli
   <section class="card" aria-labelledby="h-items">
     <h2 id="h-items"><span id="secTitle"></span><span class="en">Checklist</span></h2>
     <div class="progress"><span><b id="cnt">0</b> / <span id="total">0</span> 項目</span><button type="button" class="allbtn" id="allBtn">すべてにチェック</button></div>
+    <a class="listlink" id="listLink" href="#" target="_blank" rel="noopener" hidden></a>
     <ul class="items" id="items" role="list"></ul>
   </section>
 
@@ -124,7 +127,11 @@ textarea{width:100%;font:inherit;font-size:15px;padding:9px 10px;border:1px soli
     { id: 'hall_open', area: 'ホール', when: '営業開始時', items: ['床・座敷清掃確認・座布団整列', 'カウンター椅子を下ろす', 'ロースター確認・清掃', 'ロースター水を補充', 'ロースター鉄板の汚れ確認・交換', 'ホール用水ピッチャー・コップ補充・確認', 'タレ皿の確認・タレ補充確認・準備', 'ビールサーバー組立・確認', 'シャッター開放・看板設置', 'レジ立上げ', '有線ON', 'すき焼き用玉子確認・準備', 'トイレ清掃（ペーパー補充）'] },
     { id: 'hall_close', area: 'ホール', when: '営業終了時（閉店）', items: ['ロースター消火・確認', 'ロースター水抜き・片付け', 'ビールサーバー片付け・清掃', '調味料の片付け・チェック', 'テーブル・カウンター清掃', '座敷の座布団を片付け', 'カウンター椅子を上げる', 'トイレ清掃', 'レジ締め・片付け', 'シャッター閉める・看板設置', '全社員での最終確認'] },
     { id: 'kitchen_open', area: 'キッチン', when: '営業開始時', items: ['メインの昆布出汁確認（火入れなど）', 'お米準備', 'ナムル確認（水分など見て味を調節）', '肉確認（在庫・状態）', '青ネギなど細かいもの確認', 'ホルモンのそうじ、在庫確認', '杏仁豆腐確認準備'] },
-    { id: 'kitchen_close', area: 'キッチン', when: '営業終了時（閉店）', items: ['出汁の火を消す、確認', '調理器具・まな板の洗浄', '肉の片付け、冷蔵確認', 'ナムルなどの片付け', 'ホルモンの清掃・片付け', '杏仁豆腐の片付け・冷蔵確認', 'キッチン全体の清掃', 'ガスの確認', '冷蔵庫の確認', '調味料の片付け確認'] }
+    { id: 'kitchen_close', area: 'キッチン', when: '営業終了時（閉店）', items: ['出汁の火を消す、確認', '調理器具・まな板の洗浄', '肉の片付け、冷蔵確認', 'ナムルなどの片付け', 'ホルモンの清掃・片付け', '杏仁豆腐の片付け・冷蔵確認', 'キッチン全体の清掃', 'ガスの確認', '冷蔵庫の確認', '調味料の片付け確認'] },
+    // 店長タスク（1日1回）。link は項目の上に出すボタン（{ymd} は営業日の前日）
+    { id: 'manager_kintai', area: '店長', when: '勤怠チェック（前日分）', wide: true,
+      link: { t: 'らくしふで前日の勤怠を開く', url: 'https://www.rakushifu.com/admin/actual_attendances?date={ymd}&store_id=33156' },
+      items: ['チャットの勤怠通知で、前日の出退勤を確認', '打刻もれ・打刻まちがいを らくしふ で修正', 'シフトとのずれ（早出・残業）の理由を確認', '休憩が正しく入っているか確認', '今月の労働時間の見込みが多すぎる人がいないか確認'] }
   ];
   var CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5 10 17 19 7"/></svg>';
   var esc = function (s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
@@ -153,6 +160,10 @@ textarea{width:100%;font:inherit;font-size:15px;padding:9px 10px;border:1px soli
 
   // 時間帯で最初のタブを選ぶ（15時より前は開店、それ以降は閉店）
   var cur = (store.get('miyakoRoutineArea') || 'hall') + (now.getHours() >= 5 && now.getHours() < 15 ? '_open' : '_close');
+  var want = (location.hash.match(/t=([a-z_]+)/) || [])[1];
+  var has = function (id) { return LISTS.some(function (l) { return l.id === id; }); };
+  if (want && has(want)) cur = want;
+  if (!has(cur)) cur = LISTS[0].id;
   var checked = {};
   var todayDone = {};
 
@@ -162,12 +173,12 @@ textarea{width:100%;font:inherit;font-size:15px;padding:9px 10px;border:1px soli
   function renderTabs() {
     document.getElementById('tabs').innerHTML = LISTS.map(function (l) {
       var d = todayDone[l.id];
-      return '<button type="button" class="tab" data-id="' + l.id + '" aria-pressed="' + (l.id === cur) + '">' + l.area + '<small>' + l.when + (d ? ' ・<span class="done">済 ' + esc(d) + '</span>' : '') + '</small></button>';
+      return '<button type="button" class="tab' + (l.wide ? ' wide' : '') + '" data-id="' + l.id + '" aria-pressed="' + (l.id === cur) + '">' + l.area + '<small>' + l.when + (d ? ' ・<span class="done">済 ' + esc(d) + '</span>' : '') + '</small></button>';
     }).join('');
   }
   document.getElementById('tabs').addEventListener('click', function (e) {
     var b = e.target.closest('.tab'); if (!b) return;
-    cur = b.dataset.id; store.set('miyakoRoutineArea', cur.split('_')[0]);
+    cur = b.dataset.id; if (/_(open|close)$/.test(cur)) store.set('miyakoRoutineArea', cur.split('_')[0]);
     loadDraft(); renderTabs(); renderItems();
   });
 
@@ -181,6 +192,12 @@ textarea{width:100%;font:inherit;font-size:15px;padding:9px 10px;border:1px soli
     var l = list();
     document.getElementById('secTitle').textContent = l.area + '　' + l.when;
     document.getElementById('total').textContent = l.items.length;
+    var lk = document.getElementById('listLink');
+    if (l.link) {
+      var prev = new Date(biz.getTime()); prev.setDate(prev.getDate() - 1);
+      lk.href = l.link.url.replace('{ymd}', prev.getFullYear() + '-' + pad(prev.getMonth() + 1) + '-' + pad(prev.getDate()));
+      lk.textContent = l.link.t + ' ›'; lk.hidden = false;
+    } else lk.hidden = true;
     document.getElementById('items').innerHTML = l.items.map(function (t, i) {
       return '<li class="item" role="checkbox" tabindex="0" data-i="' + i + '" aria-checked="' + !!checked[i] + '"><span class="box">' + CHECK + '</span><span class="t">' + esc(t) + '</span></li>';
     }).join('');
@@ -272,7 +289,7 @@ textarea{width:100%;font:inherit;font-size:15px;padding:9px 10px;border:1px soli
 <div class="newver" id="newVer" hidden><span id="newVerMsg">新しい版があります</span><button type="button" id="newVerBtn">更新する</button><button type="button" id="newVerClose" aria-label="閉じる" style="background:transparent;color:#fff;padding:9px 4px">✕</button></div>
 <script>
 (function () {
-  var VERSION = '2026-11-06e';  // 公開するたびに version.json と一緒に上げる
+  var VERSION = '2026-11-14a';  // 公開するたびに version.json と一緒に上げる
   function hardReload() {
     var hash = location.hash;
     if (!/k=/.test(hash)) { try { var k = localStorage.getItem('miyakoKey'); if (k) hash = '#k=' + k; } catch (e) {} }

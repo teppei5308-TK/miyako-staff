@@ -150,6 +150,7 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--ink);outline-offset
   var MAIN = [
     { cls: 'main wide', ic: 'check', t: 'ルーティンチェック', s: '開店・閉店（ホール／キッチン）。送るとチャットに通知', go: 'routine.html', self: true },
     { c: 'mint', cls: 'wide', ic: 'clock', t: '勤怠チェック（店長タスク）', s: '前日の打刻もれ・ずれを確認して送信。1日1回', go: 'routine.html', self: true, tab: 'manager_kintai' },
+    { c: 'sky', cls: 'wide', ic: 'people', t: 'バーチャル店舗', s: 'いまの店内：スタッフ・お客様・売上・チェックの状況', go: 'store.html', self: true },
     { c: 'sky', ic: 'camera', t: '仕入伝票の写真', s: '納品のたびに撮って送る', go: WS + 'IBXmB2IHhHc_m1Se0AsHkA' },
     { c: 'coral', ic: 'meat', t: '肉在庫の確認', s: 'もとぶ牧場との共有に届く', go: WS + 'jADFsSwuournXIWIm7NKAw' },
     { c: 'sun', ic: 'bowl', t: '賄いチェック', s: '退勤時に（QRと同じ）', go: WS + '95vWJ_rtlGXL_MCdVBLNUQ' },
@@ -313,7 +314,7 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--ink);outline-offset
 <div class="newver" id="newVer" hidden><span id="newVerMsg">新しい版があります</span><button type="button" id="newVerBtn">更新する</button><button type="button" id="newVerClose" aria-label="閉じる" style="background:transparent;color:#fff;padding:9px 4px">✕</button></div>
 <script>
 (function () {
-  var VERSION = '2026-11-14a';  // 公開するたびに version.json と一緒に上げる
+  var VERSION = '2026-11-19a';  // 公開するたびに version.json と一緒に上げる
   function hardReload() {
     var hash = location.hash;
     if (!/k=/.test(hash)) { try { var k = localStorage.getItem('miyakoKey'); if (k) hash = '#k=' + k; } catch (e) {} }

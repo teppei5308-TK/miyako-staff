@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#EEEEEE">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>バーチャル店舗｜宮古南</title>
+<style>
+  /* スタッフページと同じ色（地 #F6F5F1・黒・CRの黄色）。配置は TERRAS のバーチャル店舗と同じ：左＝やり残し・チェック・スタッフ／中央＝店内／右＝売上・お客様／下＝賄い・予約・今月 */
+  :root{color-scheme:light;--bg:#F6F5F1;--card:#fff;--ink:#111;--ink2:#333;--muted:#666;--line:#E6E8E6;--sun:#FFB400;--sun-ink:#8A5A00;--sun-soft:#FFF3D1;
+        --ok:#1E8E62;--ok-soft:#DDF3E9;--bad:#B23A2A;--bad-soft:#F8E6E3;--warn:#8A5A00;--sky:#2C7CC4;--sky-soft:#E3F0FB;--coral:#D9572B}
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink2);font-family:"Noto Sans JP","Hiragino Kaku Gothic ProN","Hiragino Sans",sans-serif;-webkit-text-size-adjust:100%}
+  .top{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;padding:calc(env(safe-area-inset-top) + 12px) 18px 0}
+  .top h1{font-size:18px;margin:0;color:var(--ink);font-weight:900}
+  .top .sub{font-size:12.5px;color:var(--muted)}
+  .top .home{margin-left:auto;padding:6px 13px;border:1px solid #C1CCCB;background:#fff;color:#000;text-decoration:none;font-size:13px;font-weight:700}
+  .grid{display:grid;gap:12px;padding:12px 18px calc(env(safe-area-inset-bottom) + 18px);
+        grid-template-columns:minmax(250px,1fr) minmax(420px,2.1fr) minmax(250px,1fr);
+        grid-template-areas:"left stage right" "bottom bottom bottom"}
+  .col{display:flex;flex-direction:column;gap:12px;min-width:0}
+  .left{grid-area:left}.right{grid-area:right}
+  .bottom{grid-area:bottom;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+  .stage{grid-area:stage;position:relative;min-height:460px;overflow:hidden;background:#e9e2d4;border:1px solid var(--line)}
+  #scene{position:absolute;inset:0;width:100%;height:100%;display:block}
+  #pins{position:absolute;inset:0;pointer-events:none}
+  .pin{position:absolute;left:0;top:0;will-change:transform}
+  .pin>span{display:inline-flex;align-items:center;gap:4px;transform:translate(-50%,-100%);background:#fff;border:2px solid var(--c,#999);color:#111;padding:1px 7px;font-size:11.5px;font-weight:700;box-shadow:0 2px 6px rgba(0,0,0,.15);white-space:nowrap}
+  .pin.t-in>span{background:var(--coral);border-color:var(--coral);color:#fff}
+  .pin.t-up>span{background:var(--sun-soft);border-color:var(--sun);color:#5a3d00}
+  .pin.t-free>span{background:rgba(255,255,255,.85);border-color:#cfc7b8;color:#777;font-weight:500}
+  .pin.staff>span{background:#000;border-color:#000;color:#fff;font-weight:600;font-size:11px}
+  .pin.area>span{background:#fff;border-color:#000}
+  .pin.alert>span{border-color:var(--bad);animation:pulse 1.3s infinite}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(178,58,42,.5)}50%{box-shadow:0 0 0 6px rgba(178,58,42,0)}}
+  .legend{position:absolute;left:10px;bottom:8px;display:flex;gap:10px;flex-wrap:wrap;font-size:11.5px;color:#444;background:rgba(255,255,255,.85);padding:4px 8px}
+  .legend i{display:inline-block;width:10px;height:10px;margin-right:4px;vertical-align:-1px}
+  .card{background:var(--card);padding:12px 14px;min-width:0}
+  .card h2{font-size:14px;margin:0 0 8px;display:flex;align-items:baseline;gap:8px;color:var(--ink);font-weight:900}
+  .card h2 .en{font-family:"Poppins","Helvetica Neue",Arial,sans-serif;font-size:10px;font-weight:600;letter-spacing:.16em;color:var(--sun-ink);text-transform:uppercase}
+  .card h2 .r{margin-left:auto;font-weight:500;font-size:11.5px;color:var(--muted)}
+  .card.alert{box-shadow:inset 0 0 0 2px var(--bad)}
+  .yen{font-family:"Poppins","Helvetica Neue",Arial,sans-serif;font-size:30px;font-weight:600;color:var(--ink);line-height:1.15;font-variant-numeric:tabular-nums}
+  .mut{color:var(--muted);font-size:12.5px}
+  .bar{height:8px;background:var(--line);overflow:hidden;margin:5px 0 2px}
+  .bar i{display:block;height:100%;background:var(--sun)}
+  .kv{display:flex;justify-content:space-between;gap:8px;font-size:13px;margin-top:6px}
+  .kv b{color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .al{font-size:13px;padding:7px 9px;margin-top:6px;border-left:4px solid var(--line);background:#fafaf8;line-height:1.5}
+  .al:first-child{margin-top:0}
+  .al.bad{border-color:var(--bad);background:var(--bad-soft);color:#5c241d}
+  .al.warn{border-color:var(--sun);background:var(--sun-soft);color:#5a3d00}
+  .al.ok{border-color:var(--ok);background:var(--ok-soft);color:#17543c}
+  .rows{list-style:none;margin:0;padding:0;font-size:13px}
+  .rows li{display:flex;gap:8px;align-items:baseline;padding:5px 0;border-top:1px solid var(--line)}
+  .rows li:first-child{border-top:0}
+  .rows .tm{margin-left:auto;color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right}
+  .ck{flex:0 0 16px;text-align:center;font-weight:800}
+  .ck.y{color:var(--ok)}.ck.n{color:var(--bad)}.ck.w{color:var(--muted)}
+  .badge{font-size:10.5px;padding:0 7px;background:var(--ok-soft);color:#17543c;font-weight:700;white-space:nowrap}
+  .badge.off{background:#eee;color:#666}.badge.warn{background:var(--sun-soft);color:#5a3d00}.badge.bad{background:var(--bad-soft);color:#5c241d}
+  .nums{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;text-align:center}
+  .nums div{background:#f7f5ef;padding:7px 2px}
+  .nums b{display:block;font-size:19px;color:var(--ink);font-family:"Poppins","Helvetica Neue",Arial,sans-serif;font-weight:600}
+  .nums span{font-size:11px;color:var(--muted)}
+  .src{font-size:11px;color:var(--muted);padding:0 18px 14px;line-height:1.7}
+  @media (max-width:1100px){
+    .grid{grid-template-columns:1fr 1fr;grid-template-areas:"stage stage" "left right" "bottom bottom"}
+    .bottom{grid-template-columns:1fr 1fr}
+    .stage{min-height:56vw}
+  }
+  @media (max-width:640px){
+    .grid{grid-template-columns:1fr;grid-template-areas:"stage" "left" "right" "bottom";padding:10px 12px 16px}
+    .bottom{grid-template-columns:1fr}
+    .stage{min-height:86vw}
+    .top{padding-left:12px;padding-right:12px}
+    .pin>span{font-size:10px;padding:0 5px}
+    .src{padding:0 12px 14px}
+  }
+</style>
+</head>
+<body>
+<div class="top">
+  <h1>徹頭徹尾 宮古南店　バーチャル店舗</h1>
+  <span class="sub" id="sub">読み込んでいます…</span>
+  <a class="home" href="./" id="homeLink">‹ スタッフページ</a>
+</div>
+<div class="grid">
+  <div class="col left">
+    <section class="card" id="c-alerts"><h2>やり残し・気づき<span class="en">To do</span><span class="r" id="al-count"></span></h2><div id="alerts"><div class="mut">読み込んでいます…</div></div></section>
+    <section class="card" id="c-routine"><h2>ルーティンチェック<span class="en">Routine</span><span class="r" id="rt-count"></span></h2><ul class="rows" id="routine"><li class="mut">—</li></ul></section>
+    <section class="card"><h2>今日のスタッフ<span class="en">Staff</span><span class="r" id="st-count"></span></h2><ul class="rows" id="staff"><li class="mut">—</li></ul></section>
+  </div>
+
+  <div class="stage" aria-label="徹頭徹尾 宮古南店の店内">
+    <canvas id="scene"></canvas>
+    <div id="pins" aria-hidden="true"></div>
+    <div class="legend"><span><i style="background:#D9572B"></i>お客様あり</span><span><i style="background:#FFB400"></i>まもなく予約</span><span><i style="background:#cfc7b8"></i>空き</span><span><i style="background:#000"></i>スタッフ（出勤中）</span></div>
+  </div>
+
+  <div class="col right">
+    <section class="card" id="c-sales"><h2>今日の売上<span class="en">Sales</span><span class="r">dinii・税抜</span></h2><div id="sales" class="mut">—</div></section>
+    <section class="card"><h2>お客様<span class="en">Guests</span><span class="r">TableCheck</span></h2><div id="guests" class="mut">—</div></section>
+  </div>
+
+  <div class="bottom">
+    <section class="card"><h2>これからの予約<span class="en">Upcoming</span><span class="r" id="up-count"></span></h2><ul class="rows" id="upcoming"><li class="mut">—</li></ul></section>
+    <section class="card" id="c-makanai"><h2>賄いチェック<span class="en">Staff meal</span><span class="r" id="mk-count"></span></h2><ul class="rows" id="makanai"><li class="mut">—</li></ul></section>
+    <section class="card"><h2>今月の売上<span class="en">This month</span><span class="r" id="mo-note"></span></h2><div id="month" class="mut">—</div></section>
+  </div>
+</div>
+<div class="src" id="src"></div>
+
+<script type="module">
+import * as THREE from './three.module.js';
+
+/* GAS「CR 定時処理」のウェブアプリ（ルーティンチェックと同じ）。鍵は URL の #k=（スタッフページと同じ） */
+const API = 'https://script.google.com/macros/s/AKfycbwUIszTlRW20wetQ6KWe-MOoSWiqkJmg6SzsDgK_tmiQ0oi76U0EYqH50UyTTkkMto/exec';
+const REFRESH_MS = 60000;
+const STALE_MIN = 50;            // 取り込みがこれより古ければ「データが古い」と出す
+const DEMO = /[?&]demo=1/.test(location.search);
+
+/* 卓の配置：TableCheck のフロア図（2026/11/19 時点の位置・席数・種類）。変えたら TableCheck の値で直す */
+const TABLES = [
+  ['A-1', 210, 300, 55, 35, 2, 'counter', 'L'], ['A-2', 210, 370, 55, 35, 2, 'counter', 'L'],
+  ['A-3', 250, 460, 55, 35, 2, 'counter', 'B'], ['A-4', 310, 460, 55, 35, 2, 'counter', 'B'], ['A-5', 370, 460, 55, 35, 2, 'counter', 'B'],
+  ['A-6', 410, 400, 55, 35, 2, 'counter', 'R'], ['A-7', 410, 330, 55, 35, 2, 'counter', 'R'], ['A-8', 410, 260, 55, 35, 2, 'counter', 'R'],
+  ['B1', 50, 390, 70, 70, 4, 'open'], ['B2', 50, 460, 70, 70, 4, 'open'], ['B3', 50, 530, 70, 70, 4, 'open'],
+  ['B4', 520, 430, 80, 50, 6, 'tatami'], ['B5', 520, 350, 80, 50, 6, 'tatami'], ['B6', 520, 270, 80, 50, 6, 'tatami'],
+  ['C1', 40, 150, 70, 70, 6, 'private'], ['C2', 40, 250, 70, 70, 6, 'private']
+].map(([name, l, t, w, h, cap, type, side]) => ({ name, cap, type, side, x: (l + w / 2 - 320) / 45, z: (t + h / 2 - 375) / 45 }));
+const ROUTINES = [
+  ['hall_open', 'ホール 開店', 'open'], ['kitchen_open', 'キッチン 開店', 'open'],
+  ['manager_kintai', '店長 勤怠チェック', 'kintai'],
+  ['hall_close', 'ホール 閉店', 'close'], ['kitchen_close', 'キッチン 閉店', 'close']
+];
+
+/* ---------- 小さな道具 ---------- */
+const $ = (id) => document.getElementById(id);
+const yen = (n) => '¥' + Math.round(Number(n) || 0).toLocaleString('ja-JP');
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const nowJst = () => new Date(Date.now() + (new Date().getTimezoneOffset() + 540) * 60000);
+const pad = (n) => String(n).padStart(2, '0');
+const ymd = (d) => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+const mins = (t) => { const m = String(t || '').match(/(\d{1,2}):(\d{2})/); return m ? +m[1] * 60 + +m[2] : null; };
+/* 営業日の中の「分」：朝5時より前は前日の続き（24時〜）として数える */
+const bizMin = (t) => { const m = mins(t); return m == null ? null : (m < 300 ? m + 1440 : m); };
+const hmOf = (m) => { m = ((m % 1440) + 1440) % 1440; return Math.floor(m / 60) + ':' + pad(m % 60); };
+const store = { get: (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} } };
+
+/* 鍵 */
+let key = (location.hash.match(/k=([A-Za-z0-9_-]+)/) || [])[1] || '';
+if (key) store.set('miyakoKey', key); else key = store.get('miyakoKey') || '';
+if (key) $('homeLink').href = './#k=' + key;
+
+/* ---------- 3D：店内（カメラは止めたまま） ---------- */
+const canvas = $('scene');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+const scene = new THREE.Scene(); scene.background = new THREE.Color('#e9e2d4');
+const camera = new THREE.PerspectiveCamera(36, 1, 0.1, 200);
+scene.add(new THREE.HemisphereLight('#fff6e6', '#9c8f7c', 1.15));
+const sun = new THREE.DirectionalLight('#fff0d8', 1.5); sun.position.set(-6, 14, 8); sun.castShadow = true;
+sun.shadow.mapSize.set(1024, 1024); Object.assign(sun.shadow.camera, { left: -10, right: 10, top: 10, bottom: -10 }); scene.add(sun);
+const mat = (c, o = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.85, ...o });
+function box(w, h, d, color, x, y, z, o) { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(color, o)); m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true; scene.add(m); return m; }
+function cyl(r, h, color, x, y, z) { const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, 20), mat(color)); m.position.set(x, y, z); m.castShadow = true; scene.add(m); return m; }
+function label(text, w, h, x, y, z, rotX = -Math.PI / 2) {
+  const c = document.createElement('canvas'); c.width = 512; c.height = Math.round(512 * h / w); const g = c.getContext('2d');
+  g.fillStyle = 'rgba(0,0,0,0)'; g.fillRect(0, 0, c.width, c.height); g.fillStyle = 'rgba(60,50,40,.55)'; g.font = '700 ' + Math.round(c.height * 0.6) + 'px "Hiragino Sans","Noto Sans JP",sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, c.width / 2, c.height / 2);
+  const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: tex, transparent: true })); m.rotation.x = rotX; m.position.set(x, y, z); scene.add(m); return m;
+}
+/* 床・壁 */
+box(15.4, 0.1, 12.6, '#d8cdb8', 0, -0.05, 0.1);
+box(15.4, 1.5, 0.15, '#3a322b', 0, 0.75, -6.2); box(0.15, 1.5, 12.6, '#3a322b', -7.7, 0.75, 0.1); box(0.15, 1.5, 12.6, '#3a322b', 7.7, 0.75, 0.1);
+/* キッチン（奥） */
+box(8.5, 0.95, 1.1, '#9aa2a6', 1.2, 0.47, -5.4, { roughness: 0.4, metalness: 0.4 }); box(8.5, 0.12, 1.3, '#5a6064', 1.2, 1.0, -5.4);
+box(3.2, 0.5, 0.9, '#42484c', 2.6, 2.0, -5.5); label('キッチン', 3.2, 0.7, 1.2, 0.02, -4.3);
+/* カウンター（コの字）と肉場 */
+const WOOD = '#4a3626', WOOD2 = '#6b4d35';
+box(0.7, 1.0, 3.4, WOOD, -1.15, 0.5, -0.5); box(0.7, 1.0, 5.2, WOOD, 1.95, 0.5, -0.6); box(3.8, 1.0, 0.7, WOOD, 0.4, 0.5, 1.65);
+box(1.6, 0.9, 1.6, '#8d9498', 0.4, 0.45, -0.4, { roughness: 0.4, metalness: 0.3 }); label('肉場', 1.5, 0.55, 0.4, 0.92, -0.4);
+/* 座敷（右）・個室（左奥）・入口とレジ（手前） */
+box(2.6, 0.25, 5.6, '#b9a877', 5.35, 0.12, 0.0); label('座敷', 1.6, 0.55, 5.35, 0.27, 3.1);
+box(0.1, 1.5, 4.6, '#5b4a3a', -3.9, 0.75, -3.2); box(3.7, 1.5, 0.1, '#5b4a3a', -5.8, 0.75, -0.9); box(3.7, 1.2, 0.08, '#7a6753', -5.8, 0.6, -3.1); label('個室', 1.6, 0.55, -6.6, 0.02, -5.3);
+box(1.6, 1.0, 0.7, WOOD2, 3.6, 0.5, 5.3); box(0.5, 0.35, 0.4, '#222', 3.6, 1.18, 5.3); label('入口', 1.6, 0.55, 0.4, 0.02, 5.6); box(2.2, 0.06, 0.5, '#8b2f1c', 0.4, 0.03, 6.1);
+
+/* 卓 */
+const TB = {};
+TABLES.forEach((t) => {
+  const o = { ...t, guests: [], state: 'free' }; TB[t.name] = o;
+  if (t.type === 'counter') {
+    const dx = t.side === 'L' ? -0.55 : t.side === 'R' ? 0.55 : 0, dz = t.side === 'B' ? 0.55 : 0;
+    const cx = t.side === 'L' ? -1.15 : t.side === 'R' ? 1.95 : t.x, cz = t.side === 'B' ? 1.65 : t.z;
+    o.grill = cyl(0.17, 0.06, '#222', cx, 1.03, cz);
+    o.seats = [[cx + dx * 1.25 - (t.side === 'B' ? 0.28 : 0), cz + dz * 1.25 - (t.side === 'B' ? 0 : 0.28)], [cx + dx * 1.25 + (t.side === 'B' ? 0.28 : 0), cz + dz * 1.25 + (t.side === 'B' ? 0 : 0.28)]];
+    o.seats.forEach((s) => cyl(0.16, 0.5, '#2b2b2b', s[0], 0.25, s[1]));
+    o.pin = [cx + dx * 1.9, 1.0, cz + dz * 1.9]; o.face = t.side === 'L' ? Math.PI / 2 : t.side === 'R' ? -Math.PI / 2 : Math.PI;
+  } else {
+    const low = t.type === 'tatami', y0 = low ? 0.25 : 0, w = t.type === 'tatami' ? 1.5 : 1.25, d = t.type === 'tatami' ? 0.95 : 1.25, h = low ? 0.35 : 0.72;
+    box(w, 0.08, d, WOOD2, t.x, y0 + h, t.z); box(w * 0.5, h, d * 0.5, '#3b2c20', t.x, y0 + h / 2, t.z);
+    o.grill = cyl(0.2, 0.05, '#222', t.x, y0 + h + 0.06, t.z);
+    const sx = w / 2 + 0.32, sz = d / 2 + 0.3;
+    o.seats = low ? [[t.x - 0.45, t.z - sz], [t.x + 0.45, t.z - sz], [t.x - 0.45, t.z + sz], [t.x + 0.45, t.z + sz], [t.x - sx, t.z], [t.x, t.z + sz]]
+                  : [[t.x - sx, t.z - 0.3], [t.x + sx, t.z - 0.3], [t.x - sx, t.z + 0.3], [t.x + sx, t.z + 0.3], [t.x, t.z - sz], [t.x, t.z + sz]];
+    o.seatY = y0; o.pin = [t.x, y0 + 1.75, t.z];
+  }
+  o.glow = new THREE.Mesh(new THREE.CircleGeometry(o.type === 'counter' ? 0.13 : 0.16, 20), new THREE.MeshBasicMaterial({ color: '#ff9a3c' }));
+  o.glow.rotation.x = -Math.PI / 2; o.glow.position.copy(o.grill.position); o.glow.position.y += 0.04; o.glow.visible = false; scene.add(o.glow);
+});
+
+/* 人 */
+function person(color, apron) {
+  const g = new THREE.Group();
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.23, 0.78, 14), mat(color)); body.position.y = 0.54; body.castShadow = true; g.add(body);
+  if (apron) { const a = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.46, 0.05), mat(apron)); a.position.set(0, 0.5, 0.21); g.add(a); }
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.16, 14, 10), mat('#f1d3b5')); head.position.y = 1.1; head.castShadow = true; g.add(head);
+  scene.add(g); return g;
+}
+const GUEST_COLORS = ['#c7a27c', '#7d8fa3', '#b5838d', '#8fa37d', '#a3907d', '#6d7a88', '#c9b458', '#8a7fa8'];
+
+/* 目印（HTML） */
+const pins = [];
+function pin(pos, text, cls) {
+  const div = document.createElement('div'); div.className = 'pin ' + (cls || ''); const sp = document.createElement('span'); sp.textContent = text; div.appendChild(sp); $('pins').appendChild(div);
+  const P = { pos: new THREE.Vector3(pos[0], pos[1], pos[2]), div, sp, obj: null, off: null }; pins.push(P); return P;
+}
+Object.values(TB).forEach((o) => { o.P = pin(o.pin, o.name, 't-free'); });
+const PIN = { kit: pin([1.2, 2.5, -5.4], 'キッチン', 'area'), reg: pin([3.6, 1.9, 5.3], 'レジ', 'area'), rt: pin([-2.6, 1.6, 5.3], 'ルーティン', 'area') };
+const v = new THREE.Vector3();
+function placePins() {
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  for (const P of pins) {
+    if (P.obj) v.copy(P.obj.position).add(P.off); else v.copy(P.pos);
+    v.project(camera);
+    const hide = v.z > 1 || (P.obj && !P.obj.visible);
+    P.div.style.display = hide ? 'none' : '';
+    if (!hide) P.div.style.transform = `translate(${(v.x * 0.5 + 0.5) * w}px, ${(-v.y * 0.5 + 0.5) * h}px)`;
+  }
+}
+const target = new THREE.Vector3(0, 0.3, 0.2);
+function resize() {
+  const w = canvas.clientWidth || 600, h = canvas.clientHeight || 400;
+  renderer.setSize(w, h, false); const aspect = w / h; camera.aspect = aspect;
+  camera.fov = aspect < 1.1 ? 48 : 36; camera.updateProjectionMatrix();
+  const dist = aspect < 1.1 ? 21.5 : aspect < 1.4 ? 21 : 19.5, yaw = -0.1, pitch = 0.95;
+  camera.position.set(target.x + dist * Math.sin(yaw) * Math.cos(pitch), target.y + dist * Math.sin(pitch), target.z + dist * Math.cos(yaw) * Math.cos(pitch));
+  camera.lookAt(target);
+}
+new ResizeObserver(resize).observe(canvas); resize();
+
+const staffObjs = [];
+const clock = new THREE.Clock();
+function tick() {
+  const t = clock.getElapsedTime();
+  staffObjs.forEach((s, i) => { s.g.position.y = Math.abs(Math.sin(t * 2 + i)) * 0.03; s.g.rotation.y = s.face + Math.sin(t * 0.7 + i) * 0.5; });
+  Object.values(TB).forEach((o, i) => { if (o.glow.visible) o.glow.material.color.setHSL(0.07, 1, 0.55 + Math.sin(t * 3 + i) * 0.08); });
+  renderer.render(scene, camera); placePins(); requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+
+/* ---------- データ ---------- */
+let D = null, APP = null, cached = false, loadErr = '';
+
+function demoData() {
+  const n = nowJst(), h = n.getHours() < 5 ? n.getHours() + 24 : n.getHours(), m = h * 60 + n.getMinutes(), at = ymd(n) + ' ' + n.getHours() + ':' + pad(n.getMinutes());
+  const T = (d) => hmOf(m + d);
+  return { ok: true, biz: ymd(n), now: at, alertHours: { open: 12, kintai: 15, close: 25 },
+    staff: { at, data: [{ n: '（見本）店長', ps: T(-300), pe: T(240), i: T(-305), o: '' }, { n: '（見本）キッチンA', ps: T(-240), pe: T(200), i: T(-238), o: '' }, { n: '（見本）ホールB', ps: T(-120), pe: T(180), i: T(-118), o: '' }, { n: '（見本）ホールC', ps: T(-40), pe: T(200), i: '', o: '' }, { n: '（見本）ランチD', ps: T(-420), pe: T(-120), i: T(-422), o: T(-115) }, { n: '（見本）夜E', ps: T(90), pe: T(330), i: '', o: '' }] },
+    tables: { at, data: { sum: { g: 23, p: 61, web: 9, phone: 2, walk: 12, other: 0, noshow: 1, cancel: 0 }, list: [['A-1', T(-50), 2, 'in', T(-48), 'n'], ['A-4', T(-20), 1, 'in', T(-18), 'n'], ['B2', T(-70), 4, 'in', T(-66), 'w'], ['B5', T(-30), 5, 'in', T(-25), 'w'], ['C1', T(25), 6, 'up', '', 'w'], ['B6', T(70), 4, 'up', '', 'p'], ['A-7', T(120), 2, 'up', '', 'w']] } },
+    sales: { at, data: { total: 286400, guests: 71, groups: 29, avg: 4034, month: 6920000, asof: at } },
+    makanai: { at, data: [{ n: '（見本）ランチD', a: '食べた', c: 0 }] },
+    routine: { hall_open: { time: T(-360), who: '（見本）ホールB', done: 13, total: 13, missing: '' }, kitchen_open: { time: T(-355), who: '（見本）キッチンA', done: 6, total: 7, missing: 'お米準備' } } };
+}
+async function load() {
+  loadErr = '';
+  try {
+    if (DEMO) D = demoData();
+    else if (!key) { loadErr = 'key'; }
+    else {
+      const j = await fetch(API + '?action=storeLive&k=' + encodeURIComponent(key) + '&t=' + Date.now()).then((r) => r.json());
+      if (!j.ok) throw new Error(j.error === 'key' ? 'key' : (j.error || 'error'));
+      D = j; cached = false; store.set('miyakoStore', JSON.stringify({ at: Date.now(), d: j }));
+    }
+  } catch (e) { loadErr = e.message || 'error'; }
+  render();
+}
+/* スタッフページの今月の目標（毎朝の鍵付きデータ data.enc.json）。読めなければ出さないだけ */
+async function loadApp() {
+  if (!key || !(window.crypto && crypto.subtle)) return;
+  try {
+    const b64 = (s) => { s = s.replace(/-/g, '+').replace(/_/g, '/'); while (s.length % 4) s += '='; const bin = atob(s), u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u; };
+    const enc = await fetch('data.enc.json?t=' + Date.now(), { cache: 'no-store' }).then((r) => r.json());
+    const k = await crypto.subtle.importKey('raw', b64(key), 'AES-GCM', false, ['decrypt']);
+    APP = JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64(enc.iv) }, k, b64(enc.ct)))); render();
+  } catch (e) {}
+}
+
+function render() {
+  const n = nowJst(), nm = bizMin(n.getHours() + ':' + pad(n.getMinutes())), alerts = [];
+  if (!D) {
+    $('sub').textContent = loadErr === 'key' ? '' : '読み込んでいます…';
+    $('alerts').innerHTML = loadErr === 'key' ? '<div class="al warn">スタッフページのQR（鍵付きリンク）から開くと表示されます。ホーム画面のアイコンから開いて出ないときは、QRから開き直してください。</div>'
+      : loadErr ? '<div class="al bad">読み込めませんでした。電波を確かめてください（1分後にもう一度読みます）。</div>' : '<div class="mut">読み込んでいます…</div>';
+    return;
+  }
+  const biz = D.biz, wd = '日月火水木金土'[new Date(Date.parse(biz + 'T00:00:00Z')).getUTCDay()];
+  $('sub').textContent = (DEMO ? '【見本データ】' : '') + (cached ? '前回の表示です。新しいデータを読み込んでいます… ' : '') + '営業日 ' + (+biz.slice(5, 7)) + '/' + (+biz.slice(8, 10)) + '（' + wd + '）・' + n.getHours() + ':' + pad(n.getMinutes()) + ' 時点・1分ごとに更新';
+  const ageMin = (p) => { if (!p || !p.at) return null; const t = Date.parse(p.at.replace(' ', 'T') + ':00+09:00'); return isNaN(t) ? null : Math.round((Date.now() - t) / 60000); };
+  const atHm = (p) => p && p.at ? p.at.slice(11) : '—';
+
+  /* ---- ルーティンチェック ---- */
+  const R = D.routine || {}, AH = D.alertHours || { open: 12, kintai: 15, close: 25 };
+  let rtDone = 0, rtLate = 0;
+  $('routine').innerHTML = ROUTINES.map(([id, name, slot]) => {
+    const r = R[id], due = AH[slot] * 60, late = !r && nm >= due;
+    if (r) rtDone++; if (late) { rtLate++; alerts.push(['bad', 'ルーティンチェック「' + name + '」がまだ送られていません（目安 ' + hmOf(due) + '）']); }
+    const part = r && r.total && r.done < r.total;
+    return '<li><span class="ck ' + (r ? (part ? 'w' : 'y') : late ? 'n' : 'w') + '">' + (r ? (part ? '△' : '✓') : late ? '!' : '・') + '</span><span>' + esc(name) +
+      (r && part ? '<br><span class="mut">できなかった：' + esc(r.missing) + '</span>' : '') + '</span>' +
+      '<span class="tm">' + (r ? esc(String(r.time).replace(/^\d+\/\d+ /, '')) + ' ' + esc(r.who) + '<br>' + r.done + '/' + r.total : late ? 'まだ' : '目安 ' + hmOf(due)) + '</span></li>';
+  }).join('');
+  $('rt-count').textContent = rtDone + ' / ' + ROUTINES.length + ' 済み';
+  $('c-routine').classList.toggle('alert', rtLate > 0); PIN.rt.div.classList.toggle('alert', rtLate > 0);
+  Object.keys(R).forEach((id) => { const r = R[id]; if (r.missing) alerts.push(['warn', (ROUTINES.find((x) => x[0] === id) || [0, id])[1] + 'で、できなかった項目：' + r.missing]); });
+
+  /* ---- スタッフ ---- */
+  staffObjs.forEach((s) => { scene.remove(s.g); s.P.div.remove(); pins.splice(pins.indexOf(s.P), 1); }); staffObjs.length = 0;
+  const SPOTS = [[0.4, -1.6, 0], [-0.6, -4.4, Math.PI], [3.6, 4.5, Math.PI], [1.4, -4.4, Math.PI], [-3.0, 3.6, 0], [0.4, 0.75, 0], [3.2, -4.4, Math.PI], [-2.8, 0.2, 0], [4.4, -4.3, Math.PI], [0.4, 4.2, 0]];
+  const sp = D.staff, ppl = sp ? (sp.data || []) : null; let on = 0;
+  if (!ppl) { $('staff').innerHTML = '<li class="mut">今日のシフト・打刻はまだ取り込まれていません</li>'; $('st-count').textContent = ''; }
+  else if (!ppl.length) { $('staff').innerHTML = '<li class="mut">今日のシフトの登録はありません</li>'; $('st-count').textContent = ''; }
+  else {
+    const rows = ppl.slice().sort((a, b) => (bizMin(a.ps || a.i) || 0) - (bizMin(b.ps || b.i) || 0)).map((p) => {
+      const ps = bizMin(p.ps), pe0 = bizMin(p.pe), pe = pe0 != null && ps != null && pe0 < ps ? pe0 + 1440 : pe0, i = bizMin(p.i), o = bizMin(p.o);
+      /* 打刻があれば打刻で、なければシフトの時間で「いる・いない」を決める */
+      const here = i != null ? o == null : false, planned = ps != null && pe != null && ps <= nm && nm < pe;
+      let badge = '';
+      if (here) { on++; badge = '<span class="badge">出勤中</span>'; }
+      else if (o != null) badge = '<span class="badge off">退勤</span>';
+      else if (planned && nm - ps >= 15) { badge = '<span class="badge bad">打刻なし</span>'; alerts.push(['warn', p.n + 'さん：シフトは ' + p.ps + ' からですが、出勤の打刻がありません']); }
+      else if (ps != null && nm < ps) badge = '<span class="badge warn">これから</span>';
+      if (here && pe != null && nm - pe >= 60) alerts.push(['warn', p.n + 'さん：シフトは ' + p.pe + ' までですが、退勤の打刻がまだです']);
+      if (i != null && ps == null) alerts.push(['', p.n + 'さん：シフトの登録がない日に打刻があります']);
+      if (here) {
+        const s = SPOTS[staffObjs.length % SPOTS.length], g = person('#1c1c1c', '#8C2F1C'); g.position.set(s[0], 0, s[1]);
+        const P = pin([0, 0, 0], p.n.replace(/（見本）/, ''), 'staff'); P.obj = g; P.off = new THREE.Vector3(0, 1.55, 0); staffObjs.push({ g, P, face: s[2] });
+      }
+      return '<li><span>' + esc(p.n) + ' ' + badge + '<br><span class="mut">シフト ' + (p.ps ? esc(p.ps) + '–' + esc(p.pe) : 'なし') + '</span></span><span class="tm">' + (p.i ? '出 ' + esc(p.i) : '') + (p.o ? '<br>退 ' + esc(p.o) : '') + '</span></li>';
+    });
+    $('staff').innerHTML = rows.join(''); $('st-count').textContent = '出勤中 ' + on + '人';
+  }
+
+  /* ---- お客様（TableCheck） ---- */
+  Object.values(TB).forEach((o) => { o.guests.forEach((g) => scene.remove(g)); o.guests = []; o.state = 'free'; o.info = ''; });
+  const tp = D.tables, list = tp && tp.data ? (tp.data.list || []) : null;
+  if (!list) { $('guests').innerHTML = '<span class="mut">今日の予約・来店はまだ取り込まれていません</span>'; $('upcoming').innerHTML = '<li class="mut">—</li>'; $('up-count').textContent = ''; }
+  else {
+    const sm = tp.data.sum || {}, totG = sm.g || 0, totP = sm.p || 0, noshow = sm.noshow || 0, cancel = sm.cancel || 0, src = { web: sm.web || 0, phone: sm.phone || 0, walk_in: sm.walk || 0, other: sm.other || 0 };
+    let inG = 0, inP = 0; const ups = [];
+    list.forEach(([tn, st, pax, c, seated, source]) => {
+      const s = bizMin(st), names = String(tn || '').split('+').filter(Boolean);
+      if (c === 'in') { inG++; inP += pax; names.forEach((nm2, k) => { const o = TB[nm2]; if (!o) return; o.state = 'in'; o.info = (k === 0 ? pax + '名' : '') + (seated ? ' ' + seated + '〜' : ''); o.pax = k === 0 ? pax : 0; }); }
+      else if (c === 'up') { ups.push([s, st, pax, tn, source]); if (s != null && s - nm <= 90) names.forEach((nm2) => { const o = TB[nm2]; if (o && o.state === 'free') { o.state = 'up'; o.info = st + ' ' + pax + '名'; } }); if (s != null && nm - s >= 20) alerts.push(['warn', st + ' の予約（' + pax + '名・' + (tn || '卓未定') + '）が、まだ着席になっていません']); }
+    });
+    let used = 0;
+    Object.values(TB).forEach((o, ti) => {
+      o.P.div.className = 'pin t-' + o.state; o.P.sp.textContent = o.name + (o.info ? ' ' + o.info.trim() : ''); o.glow.visible = o.state === 'in';
+      if (o.state === 'in') { used++; const k = Math.min(o.seats.length, Math.max(1, o.pax || (o.type === 'counter' ? 1 : 2)));
+        for (let q = 0; q < k; q++) { const g = person(GUEST_COLORS[(ti * 3 + q) % GUEST_COLORS.length], null); g.scale.setScalar(0.82); g.position.set(o.seats[q][0], o.seatY || 0, o.seats[q][1]); g.rotation.y = Math.atan2(o.grill.position.x - o.seats[q][0], o.grill.position.z - o.seats[q][1]); o.guests.push(g); } }
+    });
+    $('guests').className = '';
+    $('guests').innerHTML = '<div class="nums"><div><b>' + inG + '</b><span>いま（組）</span></div><div><b>' + inP + '</b><span>いま（名）</span></div><div><b>' + used + '/' + TABLES.length + '</b><span>使用中の卓</span></div></div>' +
+      '<div class="kv"><span>今日の来店・予約</span><b>' + totG + '組 ' + totP + '名</b></div>' +
+      '<div class="kv"><span>Web予約 ' + src.web + '・電話 ' + src.phone + '・予約なし ' + src.walk_in + (src.other ? '・ほか ' + src.other : '') + '</span><b></b></div>' +
+      ((noshow || cancel) ? '<div class="kv"><span>来店なし ' + noshow + '・キャンセル ' + cancel + '</span><b></b></div>' : '');
+    ups.sort((a, b) => (a[0] || 0) - (b[0] || 0));
+    $('upcoming').innerHTML = ups.length ? ups.slice(0, 8).map((u) => '<li><span><b>' + esc(u[1]) + '</b>　' + u[2] + '名</span><span class="tm">' + esc(u[3] || '卓未定') + '・' + ({ w: 'Web', p: '電話', n: '予約なし' }[u[4]] || '') + '</span></li>').join('') + (ups.length > 8 ? '<li class="mut">ほか ' + (ups.length - 8) + ' 件</li>' : '') : '<li class="mut">このあとの予約はありません</li>';
+    $('up-count').textContent = ups.length ? ups.length + '組 ' + ups.reduce((a, u) => a + u[2], 0) + '名' : '';
+    const big = ups.find((u) => u[2] >= 6 && u[0] != null && u[0] - nm <= 60 && u[0] - nm >= 0); if (big) alerts.push(['', big[1] + ' に ' + big[2] + '名の予約があります（' + (big[3] || '卓未定') + '）']);
+  }
+
+  /* ---- 売上（dinii） ---- */
+  const sl = D.sales && D.sales.data;
+  if (!sl) $('sales').innerHTML = '<span class="mut">今日の売上はまだ取り込まれていません</span>';
+  else {
+    $('sales').className = '';
+    $('sales').innerHTML = '<div class="yen">' + yen(sl.total) + '</div>' +
+      '<div class="kv"><span>客数</span><b>' + (sl.guests || 0) + '人</b></div><div class="kv"><span>組数</span><b>' + (sl.groups || 0) + '組</b></div><div class="kv"><span>客単価</span><b>' + (sl.guests ? yen(sl.avg || sl.total / sl.guests) : '—') + '</b></div>' +
+      '<div class="mut" style="margin-top:6px">' + esc(atHm(D.sales)) + ' に読んだ数字です</div>';
+  }
+  /* ---- 今月 ---- */
+  const tgt = APP && APP.sales && APP.sales.target ? APP.sales.target : 0, mo = sl && sl.month ? sl.month : (APP && APP.sales ? APP.sales.total : 0);
+  if (!mo) $('month').innerHTML = '<span class="mut">—</span>';
+  else {
+    const pct = tgt ? Math.round(mo / tgt * 1000) / 10 : 0;
+    $('month').className = '';
+    $('month').innerHTML = '<div class="yen" style="font-size:24px">' + yen(mo) + '</div>' + (tgt ? '<div class="kv"><span>目標 ' + yen(tgt) + '</span><b>' + pct + '%</b></div><div class="bar"><i style="width:' + Math.min(100, pct) + '%"></i></div>' : '') +
+      (APP && APP.sales && APP.sales.landing ? '<div class="kv"><span>このペースだと月末</span><b>' + yen(APP.sales.landing) + '</b></div>' : '');
+    $('mo-note').textContent = sl && sl.month ? '今日の分まで・税抜' : '昨日まで・税抜';
+  }
+
+  /* ---- 賄いチェック ---- */
+  const mk = D.makanai && D.makanai.data;
+  if (!mk) { $('makanai').innerHTML = '<li class="mut">今日の賄いの記録はまだ取り込まれていません</li>'; $('mk-count').textContent = ''; }
+  else {
+    const norm = (s) => String(s || '').replace(/[\s　]/g, ''), got = {}; mk.forEach((m) => { got[norm(m.n)] = m; });
+    const outNo = (ppl || []).filter((p) => p.o && !got[norm(p.n)]);
+    $('makanai').innerHTML = (mk.map((m) => '<li><span class="ck y">✓</span><span>' + esc(m.n) + '</span><span class="tm">' + esc(m.a) + (m.c ? '・店長確認済み' : '') + '</span></li>').join('') +
+      outNo.map((p) => '<li><span class="ck n">!</span><span>' + esc(p.n) + '</span><span class="tm">退勤済み・未入力</span></li>').join('')) || '<li class="mut">今日の入力はまだありません</li>';
+    $('mk-count').textContent = '入力 ' + mk.length + '人' + (outNo.length ? '・未入力 ' + outNo.length + '人' : '');
+    $('c-makanai').classList.toggle('alert', outNo.length > 0);
+    outNo.forEach((p) => alerts.push(['warn', p.n + 'さん：退勤していますが、賄いチェックが入っていません']));
+  }
+
+  /* ---- データの新しさ ---- */
+  const parts = [['staff', 'らくしふ'], ['tables', 'TableCheck'], ['sales', 'dinii'], ['makanai', '賄い（kintone）']];
+  const active = on > 0 || (nm >= 600 && nm <= 1440);
+  parts.forEach(([k, name]) => { const a = ageMin(D[k]); if (!DEMO && active && (a == null || a > STALE_MIN)) alerts.push(['warn', name + ' のデータが' + (a == null ? '今日はまだ取り込まれていません' : a + '分前のままです（取り込みが止まっているかもしれません）')]); });
+  $('src').innerHTML = 'データの元と、読んだ時刻：' + parts.map(([k, name]) => name + ' ' + esc(atHm(D[k]))).join('／') + '／ルーティンチェックは今の状態。お客様の名前や連絡先は、この画面には出しません。';
+
+  /* ---- やり残し ---- */
+  PIN.reg.sp.textContent = 'レジ ' + (sl ? yen(sl.total) : '');
+  const list2 = alerts.length ? alerts : [['ok', '今のところ、やり残しはありません']];
+  $('alerts').innerHTML = list2.map((a) => '<div class="al ' + a[0] + '">' + esc(a[1]) + '</div>').join('');
+  const cnt = alerts.filter((a) => a[0] === 'bad' || a[0] === 'warn').length;
+  $('al-count').textContent = cnt ? cnt + '件' : '';
+  $('c-alerts').classList.toggle('alert', alerts.some((a) => a[0] === 'bad'));
+}
+
+try { const c = JSON.parse(store.get('miyakoStore') || 'null'); if (!DEMO && c && Date.now() - c.at < 6 * 3600e3) { D = c.d; cached = true; render(); } } catch (e) {}
+load(); loadApp(); setInterval(load, REFRESH_MS);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) load(); });
+</script>
+</body>
+</html>

@@ -65,6 +65,14 @@
   .nums div{background:#f7f5ef;padding:7px 2px}
   .nums b{display:block;font-size:19px;color:var(--ink);font-family:"Poppins","Helvetica Neue",Arial,sans-serif;font-weight:600}
   .nums span{font-size:11px;color:var(--muted)}
+  .rank{list-style:none;margin:0;padding:0;font-size:13px}
+  .rank li{display:grid;grid-template-columns:20px 1fr auto;gap:6px;align-items:baseline;padding:4px 0;border-top:1px solid var(--line)}
+  .rank li:first-child{border-top:0}
+  .rank .no{font-family:"Poppins","Helvetica Neue",Arial,sans-serif;font-weight:600;color:var(--sun-ink);text-align:right}
+  .rank .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink)}
+  .rank .ct{font-variant-numeric:tabular-nums;color:var(--ink2);white-space:nowrap;font-size:12px}
+  .rank .rb{grid-column:2 / span 2;height:4px;background:var(--line);overflow:hidden}
+  .rank .rb i{display:block;height:100%;background:var(--sun)}
   .src{font-size:11px;color:var(--muted);padding:0 18px 14px;line-height:1.7}
   @media (max-width:1100px){
     .grid{grid-template-columns:1fr 1fr;grid-template-areas:"stage stage" "left right" "bottom bottom"}
@@ -104,6 +112,7 @@
   <div class="col right">
     <section class="card" id="c-sales"><h2>今日の売上<span class="en">Sales</span><span class="r">dinii・税抜</span></h2><div id="sales" class="mut">—</div></section>
     <section class="card"><h2>お客様<span class="en">Guests</span><span class="r">TableCheck</span></h2><div id="guests" class="mut">—</div></section>
+    <section class="card"><h2>売れ筋 TOP10<span class="r" id="mn-date">dinii</span></h2><ol class="rank" id="menu"><li class="mut">—</li></ol></section>
   </div>
 
   <div class="bottom">
@@ -249,7 +258,7 @@ function resize() {
   const w = canvas.clientWidth || 600, h = canvas.clientHeight || 400;
   renderer.setSize(w, h, false); const aspect = w / h; camera.aspect = aspect;
   camera.fov = aspect < 1.1 ? 48 : 36; camera.updateProjectionMatrix();
-  const dist = aspect < 0.8 ? 26 : aspect < 1.1 ? 24 : aspect < 1.4 ? 21.5 : 19.5, yaw = -0.1, pitch = 0.95;
+  const dist = aspect < 0.8 ? 26 : aspect < 1.1 ? 24 : aspect < 1.4 ? 21.5 : 19.5, yaw = 0, pitch = 1.02;   /* 正面からまっすぐ（斜めに回さない） */
   camera.position.set(target.x + dist * Math.sin(yaw) * Math.cos(pitch), target.y + dist * Math.sin(pitch), target.z + dist * Math.cos(yaw) * Math.cos(pitch));
   camera.lookAt(target);
 }
@@ -276,6 +285,7 @@ function demoData() {
     tables: { at, data: { sum: { g: 23, p: 61, web: 9, phone: 2, walk: 12, other: 0, noshow: 1, cancel: 0 }, list: [['A-1', T(-50), 2, 'in', T(-48), 'n'], ['A-4', T(-20), 1, 'in', T(-18), 'n'], ['B2', T(-70), 4, 'in', T(-66), 'w'], ['B5', T(-30), 5, 'in', T(-25), 'w'], ['C1', T(25), 6, 'up', '', 'w'], ['B6', T(70), 4, 'up', '', 'p'], ['A-7', T(120), 2, 'up', '', 'w']] } },
     sales: { at, data: { total: 286400, guests: 71, groups: 29, avg: 4034, month: 6920000, asof: at } },
     makanai: { at, data: [{ n: '（見本）ランチD', a: '食べた', c: 0 }] },
+    menu: { at, data: { date: ymd(n), items: [['タン塩', 16, 30080], ['ファミリーセット', 5, 27500], ['おすすめ3種盛り合わせ', 7, 22960], ['タレ漬けカルビ', 16, 18880], ['ハラミ', 9, 13320], ['生ビール・オリオン', 22, 12760]] } },
     routine: { hall_open: { time: T(-360), who: '（見本）ホールB', done: 13, total: 13, missing: '' }, kitchen_open: { time: T(-355), who: '（見本）キッチンA', done: 6, total: 7, missing: 'お米準備' } } };
 }
 async function load() {
@@ -406,6 +416,15 @@ function render() {
     $('mo-note').textContent = sl && sl.month ? '今日の分まで・税抜' : '昨日まで・税抜';
   }
 
+  /* ---- 売れ筋（dinii の商品分析。当日分はすぐには入らないので、出ている中でいちばん新しい日） ---- */
+  const mn = D.menu && D.menu.data;
+  if (!mn || !(mn.items || []).length) { $('menu').innerHTML = '<li class="mut">売れ筋はまだ取り込まれていません</li>'; $('mn-date').textContent = 'dinii'; }
+  else {
+    const mx = Math.max.apply(null, mn.items.map((x) => x[2])) || 1;
+    $('menu').innerHTML = mn.items.map((x, i) => '<li><span class="no">' + (i + 1) + '</span><span class="nm" title="' + esc(x[0]) + '">' + esc(x[0]) + '</span><span class="ct">' + x[1] + '個・' + yen(x[2]) + '</span><span class="rb"><i style="width:' + Math.round(x[2] / mx * 100) + '%"></i></span></li>').join('');
+    $('mn-date').textContent = (+mn.date.slice(5, 7)) + '/' + (+mn.date.slice(8, 10)) + ' の分・売上順・税抜' + (mn.date !== biz ? '（今日の分はまだ）' : '');
+  }
+
   /* ---- 賄いチェック ---- */
   const mk = D.makanai && D.makanai.data;
   if (!mk) { $('makanai').innerHTML = '<li class="mut">今日の賄いの記録はまだ取り込まれていません</li>'; $('mk-count').textContent = ''; }
@@ -420,10 +439,10 @@ function render() {
   }
 
   /* ---- データの新しさ ---- */
-  const parts = [['staff', 'らくしふ'], ['tables', 'TableCheck'], ['sales', 'dinii'], ['makanai', '賄い（kintone）']];
+  const parts = [['staff', 'らくしふ'], ['tables', 'TableCheck'], ['sales', 'dinii'], ['makanai', '賄い（kintone）']], menuAt = D.menu && D.menu.at ? '／売れ筋 ' + D.menu.at.slice(11) : '';
   const active = on > 0 || (nm >= 600 && nm <= 1440);
   parts.forEach(([k, name]) => { const a = ageMin(D[k]); if (!DEMO && active && (a == null || a > STALE_MIN)) alerts.push(['warn', name + ' のデータが' + (a == null ? '今日はまだ取り込まれていません' : a + '分前のままです（取り込みが止まっているかもしれません）')]); });
-  $('src').innerHTML = 'データの元と、読んだ時刻：' + parts.map(([k, name]) => name + ' ' + esc(atHm(D[k]))).join('／') + '／ルーティンチェックは今の状態。お客様の名前や連絡先は、この画面には出しません。';
+  $('src').innerHTML = 'データの元と、読んだ時刻：' + parts.map(([k, name]) => name + ' ' + esc(atHm(D[k]))).join('／') + esc(menuAt) + '／ルーティンチェックは今の状態。お客様の名前や連絡先は、この画面には出しません。';
 
   /* ---- やり残し ---- */
   PIN.reg.sp.textContent = 'レジ ' + (sl ? yen(sl.total) : '');

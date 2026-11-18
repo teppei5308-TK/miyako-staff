@@ -112,12 +112,11 @@
   <div class="stage" aria-label="徹頭徹尾 宮古南店の店内">
     <canvas id="scene"></canvas>
     <div id="pins" aria-hidden="true"></div>
-    <div class="legend"><span><i style="background:#D9572B"></i>お客様あり</span><span><i style="background:#FFB400"></i>まもなく予約</span><span><i style="background:#cfc7b8"></i>空き</span><span><i style="background:#000"></i>スタッフ（出勤中）</span></div>
+    <div class="legend"><span><i style="background:#000"></i>スタッフ（出勤中）</span></div>
   </div>
 
   <div class="col right">
     <section class="card" id="c-sales"><h2>今日の売上<span class="en">Sales</span><span class="r">dinii・税抜</span></h2><div id="sales" class="mut">—</div></section>
-    <section class="card"><h2>お客様<span class="en">Guests</span><span class="r">TableCheck</span></h2><div id="guests" class="mut">—</div></section>
     <section class="card"><h2>売れ筋 TOP10<span class="r" id="mn-date">dinii</span></h2><ol class="rank" id="menu"><li class="mut">—</li></ol></section>
   </div>
 
@@ -239,7 +238,6 @@ function person(color, apron) {
   const head = new THREE.Mesh(new THREE.SphereGeometry(0.16, 14, 10), mat('#f1d3b5')); head.position.y = 1.1; head.castShadow = true; g.add(head);
   scene.add(g); return g;
 }
-const GUEST_COLORS = ['#c7a27c', '#7d8fa3', '#b5838d', '#8fa37d', '#a3907d', '#6d7a88', '#c9b458', '#8a7fa8'];
 
 /* 目印（HTML） */
 const pins = [];
@@ -247,7 +245,6 @@ function pin(pos, text, cls) {
   const div = document.createElement('div'); div.className = 'pin ' + (cls || ''); const sp = document.createElement('span'); sp.textContent = text; div.appendChild(sp); $('pins').appendChild(div);
   const P = { pos: new THREE.Vector3(pos[0], pos[1], pos[2]), div, sp, obj: null, off: null }; pins.push(P); return P;
 }
-Object.values(TB).forEach((o) => { o.P = pin(o.pin, o.name, 't-free'); });
 const PIN = { kit: pin([1.2, 2.5, -5.4], 'キッチン', 'area'), reg: pin([3.6, 1.9, 5.3], 'レジ', 'area'), rt: pin([-2.6, 1.6, 5.3], 'ルーティン', 'area') };
 const v = new THREE.Vector3();
 function placePins() {
@@ -289,7 +286,6 @@ function demoData() {
   const T = (d) => hmOf(m + d);
   return { ok: true, biz: ymd(n), now: at, alertHours: { open: 12, kintai: 15, close: 25 },
     staff: { at, data: [{ n: '（見本）店長', ps: T(-300), pe: T(240), i: T(-305), o: '' }, { n: '（見本）キッチンA', ps: T(-240), pe: T(200), i: T(-238), o: '' }, { n: '（見本）ホールB', ps: T(-120), pe: T(180), i: T(-118), o: '' }, { n: '（見本）ホールC', ps: T(-40), pe: T(200), i: '', o: '' }, { n: '（見本）ランチD', ps: T(-420), pe: T(-120), i: T(-422), o: T(-115) }, { n: '（見本）夜E', ps: T(90), pe: T(330), i: '', o: '' }] },
-    tables: { at, data: { sum: { g: 23, p: 61, web: 9, phone: 2, walk: 12, other: 0, noshow: 1, cancel: 0 }, list: [['A-1', T(-50), 2, 'in', T(-48), 'n'], ['A-4', T(-20), 1, 'in', T(-18), 'n'], ['B2', T(-70), 4, 'in', T(-66), 'w'], ['B5', T(-30), 5, 'in', T(-25), 'w'], ['C1', T(25), 6, 'up', '', 'w'], ['B6', T(70), 4, 'up', '', 'p'], ['A-7', T(120), 2, 'up', '', 'w']] } },
     sales: { at, data: { total: 286400, guests: 71, groups: 29, avg: 4034, month: 6920000, asof: at } },
     makanai: { at, data: [{ n: '（見本）ランチD', a: '食べた', c: 0 }] },
     pulse: { at, data: { month: n.getMonth() + 1, n: 6, scores: [['シフト', 4.7], ['人手', 3.7], ['持ち場', 4.7], ['相談', 4.3], ['成長', 4.0], ['接客', 4.0]], note: '（見本）いちばん低いのは「人手」です。', voices: [['（見本）忙しい日でも、シフト通りの時間で上がれるようにしてほしい', '検討中：金土の人数を1人増やす'], ['（見本）足りない備品がそのままになっている', '']], thanks: ['（見本）スタッフみんなへの「ありがとう」が届きました'], next: '来月1日〜7日' } },
@@ -373,34 +369,6 @@ function render() {
     $('staff').innerHTML = rows.join(''); $('st-count').textContent = '出勤中 ' + on + '人';
   }
 
-  /* ---- お客様（TableCheck） ---- */
-  Object.values(TB).forEach((o) => { o.guests.forEach((g) => scene.remove(g)); o.guests = []; o.state = 'free'; o.info = ''; });
-  const tp = D.tables, list = tp && tp.data ? (tp.data.list || []) : null;
-  if (!list) { $('guests').innerHTML = '<span class="mut">今日の予約・来店はまだ取り込まれていません</span>'; }
-  else {
-    const sm = tp.data.sum || {}, totG = sm.g || 0, totP = sm.p || 0, noshow = sm.noshow || 0, cancel = sm.cancel || 0, src = { web: sm.web || 0, phone: sm.phone || 0, walk_in: sm.walk || 0, other: sm.other || 0 };
-    let inG = 0, inP = 0; const ups = [];
-    list.forEach(([tn, st, pax, c, seated, source]) => {
-      const s = bizMin(st), names = String(tn || '').split('+').filter(Boolean);
-      if (c === 'in') { inG++; inP += pax; names.forEach((nm2, k) => { const o = TB[nm2]; if (!o) return; o.state = 'in'; o.info = (k === 0 ? pax + '名' : '') + (seated ? ' ' + seated + '〜' : ''); o.pax = k === 0 ? pax : 0; }); }
-      else if (c === 'up') { ups.push([s, st, pax, tn, source]); if (s != null && s - nm <= 90) names.forEach((nm2) => { const o = TB[nm2]; if (o && o.state === 'free') { o.state = 'up'; o.info = st + ' ' + pax + '名'; } }); if (s != null && nm - s >= 20) alerts.push(['warn', st + ' の予約（' + pax + '名・' + (tn || '卓未定') + '）が、まだ着席になっていません']); }
-    });
-    let used = 0;
-    Object.values(TB).forEach((o, ti) => {
-      o.P.div.className = 'pin t-' + o.state; o.P.sp.textContent = o.name + (o.info ? ' ' + o.info.trim() : ''); o.glow.visible = o.state === 'in';
-      if (o.state === 'in') { used++; const k = Math.min(o.seats.length, Math.max(1, o.pax || (o.type === 'counter' ? 1 : 2)));
-        for (let q = 0; q < k; q++) { const g = person(GUEST_COLORS[(ti * 3 + q) % GUEST_COLORS.length], null); g.scale.setScalar(0.82); g.position.set(o.seats[q][0], o.seatY || 0, o.seats[q][1]); g.rotation.y = Math.atan2(o.grill.position.x - o.seats[q][0], o.grill.position.z - o.seats[q][1]); o.guests.push(g); } }
-    });
-    $('guests').className = '';
-    $('guests').innerHTML = '<div class="nums"><div><b>' + inG + '</b><span>いま（組）</span></div><div><b>' + inP + '</b><span>いま（名）</span></div><div><b>' + used + '/' + TABLES.length + '</b><span>使用中の卓</span></div></div>' +
-      '<div class="kv"><span>今日の来店・予約</span><b>' + totG + '組 ' + totP + '名</b></div>' +
-      '<div class="kv"><span>Web予約 ' + src.web + '・電話 ' + src.phone + '・予約なし ' + src.walk_in + (src.other ? '・ほか ' + src.other : '') + '</span><b></b></div>' +
-      ((noshow || cancel) ? '<div class="kv"><span>来店なし ' + noshow + '・キャンセル ' + cancel + '</span><b></b></div>' : '');
-    ups.sort((a, b) => (a[0] || 0) - (b[0] || 0));
-    if (ups.length) $('guests').insertAdjacentHTML('beforeend', '<div class="kv"><span>このあとの予約</span><b>' + ups.length + '組 ' + ups.reduce((a, u) => a + u[2], 0) + '名' + (ups[0][1] ? '（次は ' + esc(ups[0][1]) + '）' : '') + '</b></div>');
-    const big = ups.find((u) => u[2] >= 6 && u[0] != null && u[0] - nm <= 60 && u[0] - nm >= 0); if (big) alerts.push(['', big[1] + ' に ' + big[2] + '名の予約があります（' + (big[3] || '卓未定') + '）']);
-  }
-
   /* ---- 売上（dinii） ---- */
   const sl = D.sales && D.sales.data;
   if (!sl) $('sales').innerHTML = '<span class="mut">今日の売上はまだ取り込まれていません</span>';
@@ -460,7 +428,7 @@ function render() {
   }
 
   /* ---- データの新しさ ---- */
-  const parts = [['staff', 'らくしふ'], ['tables', 'TableCheck'], ['sales', 'dinii'], ['makanai', '賄い（kintone）']], menuAt = D.menu && D.menu.at ? '／売れ筋 ' + D.menu.at.slice(11) : '';
+  const parts = [['staff', 'らくしふ'], ['sales', 'dinii'], ['makanai', '賄い（kintone）']], menuAt = D.menu && D.menu.at ? '／売れ筋 ' + D.menu.at.slice(11) : '';
   const active = on > 0 || (nm >= 600 && nm <= 1440);
   parts.forEach(([k, name]) => { const a = ageMin(D[k]); if (!DEMO && active && (a == null || a > STALE_MIN)) alerts.push(['warn', name + ' のデータが' + (a == null ? '今日はまだ取り込まれていません' : a + '分前のままです（取り込みが止まっているかもしれません）')]); });
   $('src').innerHTML = 'データの元と、読んだ時刻：' + parts.map(([k, name]) => name + ' ' + esc(atHm(D[k]))).join('／') + esc(menuAt) + '／ルーティンチェックは今の状態。お客様の名前や連絡先は、この画面には出しません。';

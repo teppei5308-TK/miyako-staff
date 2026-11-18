@@ -126,7 +126,8 @@
 <script type="module">
 import * as THREE from './three.module.js';
 
-/* GAS「CR 定時処理」のウェブアプリ（ルーティンチェックと同じ）。鍵は URL の #k=（スタッフページと同じ） */
+/* GAS「CR 定時処理」のウェブアプリ（ルーティンチェックと同じ）。このページは鍵なしで開ける（2026/11/19 岸田さんの指示）。
+   鍵（#k=）があるときだけ、スタッフページへ戻るリンクと「今月の目標」に使う */
 const API = 'https://script.google.com/macros/s/AKfycbwUIszTlRW20wetQ6KWe-MOoSWiqkJmg6SzsDgK_tmiQ0oi76U0EYqH50UyTTkkMto/exec';
 const REFRESH_MS = 60000;
 const STALE_MIN = 50;            // 取り込みがこれより古ければ「データが古い」と出す
@@ -292,10 +293,9 @@ async function load() {
   loadErr = '';
   try {
     if (DEMO) D = demoData();
-    else if (!key) { loadErr = 'key'; }
     else {
-      const j = await fetch(API + '?action=storeLive&k=' + encodeURIComponent(key) + '&t=' + Date.now()).then((r) => r.json());
-      if (!j.ok) throw new Error(j.error === 'key' ? 'key' : (j.error || 'error'));
+      const j = await fetch(API + '?action=storeLive&t=' + Date.now()).then((r) => r.json());
+      if (!j.ok) throw new Error(j.error || 'error');
       D = j; cached = false; store.set('miyakoStore', JSON.stringify({ at: Date.now(), d: j }));
     }
   } catch (e) { loadErr = e.message || 'error'; }
@@ -315,9 +315,8 @@ async function loadApp() {
 function render() {
   const n = nowJst(), nm = bizMin(n.getHours() + ':' + pad(n.getMinutes())), alerts = [];
   if (!D) {
-    $('sub').textContent = loadErr === 'key' ? '' : '読み込んでいます…';
-    $('alerts').innerHTML = loadErr === 'key' ? '<div class="al warn">スタッフページのQR（鍵付きリンク）から開くと表示されます。ホーム画面のアイコンから開いて出ないときは、QRから開き直してください。</div>'
-      : loadErr ? '<div class="al bad">読み込めませんでした。電波を確かめてください（1分後にもう一度読みます）。</div>' : '<div class="mut">読み込んでいます…</div>';
+    $('sub').textContent = '読み込んでいます…';
+    $('alerts').innerHTML = loadErr ? '<div class="al bad">読み込めませんでした。電波を確かめてください（1分後にもう一度読みます）。</div>' : '<div class="mut">読み込んでいます…</div>';
     return;
   }
   const biz = D.biz, wd = '日月火水木金土'[new Date(Date.parse(biz + 'T00:00:00Z')).getUTCDay()];

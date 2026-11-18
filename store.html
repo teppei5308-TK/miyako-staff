@@ -73,6 +73,12 @@
   .rank .ct{font-variant-numeric:tabular-nums;color:var(--ink2);white-space:nowrap;font-size:12px}
   .rank .rb{grid-column:2 / span 2;height:4px;background:var(--line);overflow:hidden}
   .rank .rb i{display:block;height:100%;background:var(--sun)}
+  .pscore{display:grid;grid-template-columns:repeat(3,1fr);gap:6px 10px}
+  .pscore div{display:grid;grid-template-columns:1fr auto;align-items:baseline;font-size:12.5px}
+  .pscore b{font-family:"Poppins","Helvetica Neue",Arial,sans-serif;font-weight:600;font-size:16px;color:var(--ink)}
+  .pscore b.lo{color:var(--bad)}
+  .pscore i{grid-column:1 / -1;height:4px;background:var(--line);display:block;overflow:hidden}
+  .pscore em{display:block;height:100%;background:var(--sun)}
   .src{font-size:11px;color:var(--muted);padding:0 18px 14px;line-height:1.7}
   @media (max-width:1100px){
     .grid{grid-template-columns:1fr 1fr;grid-template-areas:"stage stage" "left right" "bottom bottom"}
@@ -116,7 +122,7 @@
   </div>
 
   <div class="bottom">
-    <section class="card"><h2>これからの予約<span class="en">Upcoming</span><span class="r" id="up-count"></span></h2><ul class="rows" id="upcoming"><li class="mut">—</li></ul></section>
+    <section class="card" id="c-pulse"><h2>パルスの声<span class="en">Staff voice</span><span class="r" id="pl-count"></span></h2><div id="pulse" class="mut">—</div></section>
     <section class="card" id="c-makanai"><h2>賄いチェック<span class="en">Staff meal</span><span class="r" id="mk-count"></span></h2><ul class="rows" id="makanai"><li class="mut">—</li></ul></section>
     <section class="card"><h2>今月の売上<span class="en">This month</span><span class="r" id="mo-note"></span></h2><div id="month" class="mut">—</div></section>
   </div>
@@ -286,6 +292,7 @@ function demoData() {
     tables: { at, data: { sum: { g: 23, p: 61, web: 9, phone: 2, walk: 12, other: 0, noshow: 1, cancel: 0 }, list: [['A-1', T(-50), 2, 'in', T(-48), 'n'], ['A-4', T(-20), 1, 'in', T(-18), 'n'], ['B2', T(-70), 4, 'in', T(-66), 'w'], ['B5', T(-30), 5, 'in', T(-25), 'w'], ['C1', T(25), 6, 'up', '', 'w'], ['B6', T(70), 4, 'up', '', 'p'], ['A-7', T(120), 2, 'up', '', 'w']] } },
     sales: { at, data: { total: 286400, guests: 71, groups: 29, avg: 4034, month: 6920000, asof: at } },
     makanai: { at, data: [{ n: '（見本）ランチD', a: '食べた', c: 0 }] },
+    pulse: { at, data: { month: n.getMonth() + 1, n: 6, scores: [['シフト', 4.7], ['人手', 3.7], ['持ち場', 4.7], ['相談', 4.3], ['成長', 4.0], ['接客', 4.0]], note: '（見本）いちばん低いのは「人手」です。', voices: [['（見本）忙しい日でも、シフト通りの時間で上がれるようにしてほしい', '検討中：金土の人数を1人増やす'], ['（見本）足りない備品がそのままになっている', '']], thanks: ['（見本）スタッフみんなへの「ありがとう」が届きました'], next: '来月1日〜7日' } },
     menu: { at, data: { date: ymd(n), items: [['タン塩', 16, 30080], ['ファミリーセット', 5, 27500], ['おすすめ3種盛り合わせ', 7, 22960], ['タレ漬けカルビ', 16, 18880], ['ハラミ', 9, 13320], ['生ビール・オリオン', 22, 12760]] } },
     routine: { hall_open: { time: T(-360), who: '（見本）ホールB', done: 13, total: 13, missing: '' }, kitchen_open: { time: T(-355), who: '（見本）キッチンA', done: 6, total: 7, missing: 'お米準備' } } };
 }
@@ -369,7 +376,7 @@ function render() {
   /* ---- お客様（TableCheck） ---- */
   Object.values(TB).forEach((o) => { o.guests.forEach((g) => scene.remove(g)); o.guests = []; o.state = 'free'; o.info = ''; });
   const tp = D.tables, list = tp && tp.data ? (tp.data.list || []) : null;
-  if (!list) { $('guests').innerHTML = '<span class="mut">今日の予約・来店はまだ取り込まれていません</span>'; $('upcoming').innerHTML = '<li class="mut">—</li>'; $('up-count').textContent = ''; }
+  if (!list) { $('guests').innerHTML = '<span class="mut">今日の予約・来店はまだ取り込まれていません</span>'; }
   else {
     const sm = tp.data.sum || {}, totG = sm.g || 0, totP = sm.p || 0, noshow = sm.noshow || 0, cancel = sm.cancel || 0, src = { web: sm.web || 0, phone: sm.phone || 0, walk_in: sm.walk || 0, other: sm.other || 0 };
     let inG = 0, inP = 0; const ups = [];
@@ -390,8 +397,7 @@ function render() {
       '<div class="kv"><span>Web予約 ' + src.web + '・電話 ' + src.phone + '・予約なし ' + src.walk_in + (src.other ? '・ほか ' + src.other : '') + '</span><b></b></div>' +
       ((noshow || cancel) ? '<div class="kv"><span>来店なし ' + noshow + '・キャンセル ' + cancel + '</span><b></b></div>' : '');
     ups.sort((a, b) => (a[0] || 0) - (b[0] || 0));
-    $('upcoming').innerHTML = ups.length ? ups.slice(0, 8).map((u) => '<li><span><b>' + esc(u[1]) + '</b>　' + u[2] + '名</span><span class="tm">' + esc(u[3] || '卓未定') + '・' + ({ w: 'Web', p: '電話', n: '予約なし' }[u[4]] || '') + '</span></li>').join('') + (ups.length > 8 ? '<li class="mut">ほか ' + (ups.length - 8) + ' 件</li>' : '') : '<li class="mut">このあとの予約はありません</li>';
-    $('up-count').textContent = ups.length ? ups.length + '組 ' + ups.reduce((a, u) => a + u[2], 0) + '名' : '';
+    if (ups.length) $('guests').insertAdjacentHTML('beforeend', '<div class="kv"><span>このあとの予約</span><b>' + ups.length + '組 ' + ups.reduce((a, u) => a + u[2], 0) + '名' + (ups[0][1] ? '（次は ' + esc(ups[0][1]) + '）' : '') + '</b></div>');
     const big = ups.find((u) => u[2] >= 6 && u[0] != null && u[0] - nm <= 60 && u[0] - nm >= 0); if (big) alerts.push(['', big[1] + ' に ' + big[2] + '名の予約があります（' + (big[3] || '卓未定') + '）']);
   }
 
@@ -422,6 +428,22 @@ function render() {
     const mx = Math.max.apply(null, mn.items.map((x) => x[2])) || 1;
     $('menu').innerHTML = mn.items.map((x, i) => '<li><span class="no">' + (i + 1) + '</span><span class="nm" title="' + esc(x[0]) + '">' + esc(x[0]) + '</span><span class="ct">' + x[1] + '個・' + yen(x[2]) + '</span><span class="rb"><i style="width:' + Math.round(x[2] / mx * 100) + '%"></i></span></li>').join('');
     $('mn-date').textContent = (+mn.date.slice(5, 7)) + '/' + (+mn.date.slice(8, 10)) + ' の分・売上順・税抜' + (mn.date !== biz ? '（今日の分はまだ）' : '');
+  }
+
+  /* ---- パルスの声（月次アンケートのまとめ。スタッフ向けに作ってある部分だけ。1件ずつの原文・名前は出さない） ---- */
+  const pl = D.pulse && D.pulse.data;
+  if (!pl) { $('pulse').innerHTML = '<span class="mut">今月のまとめはまだ取り込まれていません</span>'; $('pl-count').textContent = ''; }
+  else {
+    const open = (pl.voices || []).filter((x) => !x[1]).length, low = Math.min.apply(null, (pl.scores || []).map((x) => x[1]));
+    $('pulse').className = '';
+    $('pulse').innerHTML = '<div class="pscore">' + (pl.scores || []).map((x) => '<div><span>' + esc(x[0]) + '</span><b' + (x[1] === low ? ' class="lo"' : '') + '>' + Number(x[1]).toFixed(1) + '</b><i><em style="width:' + Math.round(x[1] / 5 * 100) + '%"></em></i></div>').join('') + '</div>' +
+      (pl.note ? '<div class="mut" style="margin:6px 0 2px">' + esc(pl.note) + '</div>' : '') +
+      '<ul class="rows" style="margin-top:6px">' + (pl.voices || []).map((x, k) => '<li><span>' + (k + 1) + '. ' + esc(x[0]) + '<br>' + (x[1] ? '<span class="mut">→ 店の対応：' + esc(x[1]) + '</span>' : '<span class="badge bad">店の対応：まだ</span>') + '</span></li>').join('') + '</ul>' +
+      ((pl.thanks || []).length ? '<div class="mut" style="margin-top:6px">ありがとうの声：' + pl.thanks.map(esc).join('／') + '</div>' : '') +
+      (pl.next ? '<div class="mut" style="margin-top:6px">次回のアンケートは ' + esc(pl.next) + '</div>' : '');
+    $('pl-count').textContent = pl.month + '月・回答 ' + pl.n + '人・5点満点';
+    $('c-pulse').classList.toggle('alert', open > 0 && n.getDate() >= 15);
+    if (open > 0) alerts.push([n.getDate() >= 15 ? 'bad' : 'warn', pl.month + '月のスタッフの声：店の対応が ' + open + ' 件まだ書かれていません' + (n.getDate() >= 15 ? '（15日にスタッフへ返す約束です）' : '')]);
   }
 
   /* ---- 賄いチェック ---- */

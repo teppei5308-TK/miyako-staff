@@ -71,7 +71,7 @@
   .pscore i{grid-column:1 / -1;height:4px;background:var(--line);display:block;overflow:hidden}
   .pscore em{display:block;height:100%;background:var(--sun)}
   .src{font-size:11px;color:var(--muted);padding:0 18px 14px;line-height:1.7}
-  /* AIに質問（鍵があるときだけ出る。右下のボタン → 小さなチャット欄） */
+  /* AIに質問（右下のボタン → 小さなチャット欄） */
   .ask-btn{position:fixed;right:max(14px,env(safe-area-inset-right));bottom:calc(env(safe-area-inset-bottom) + 14px);z-index:40;background:#000;color:#fff;border:0;border-bottom:4px solid var(--sun);padding:11px 16px 8px;font:inherit;font-size:14px;font-weight:800;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.25)}
   .ask-btn:focus-visible,.ask input:focus-visible,.ask button:focus-visible{outline:3px solid var(--sky);outline-offset:2px}
   .ask{position:fixed;right:max(12px,env(safe-area-inset-right));bottom:calc(env(safe-area-inset-bottom) + 12px);z-index:41;width:min(380px,calc(100vw - 24px));height:min(540px,calc(100dvh - 24px));display:flex;flex-direction:column;background:#fff;border:2px solid #000;box-shadow:0 10px 30px rgba(0,0,0,.3)}
@@ -142,7 +142,7 @@
 import * as THREE from './three.module.js';
 
 /* GAS「CR 定時処理」のウェブアプリ（ルーティンチェックと同じ）。このページは鍵なしで開ける（2026/11/19 岸田さんの指示）。
-   鍵（#k=）があるときだけ、スタッフページへ戻るリンクと「今月の目標」と「AIに質問」に使う */
+   鍵（#k=）があるときだけ、スタッフページへ戻るリンクと「今月の目標」に使う */
 const API = 'https://script.google.com/macros/s/AKfycbwUIszTlRW20wetQ6KWe-MOoSWiqkJmg6SzsDgK_tmiQ0oi76U0EYqH50UyTTkkMto/exec';
 const REFRESH_MS = 60000;
 const STALE_MIN = 50;            // 取り込みがこれより古ければ「データが古い」と出す
@@ -457,9 +457,10 @@ function render() {
   $('c-alerts').classList.toggle('alert', alerts.some((a) => a[0] === 'bad'));
 }
 
-/* ---------- AIに質問（鍵があるときだけ。ページ → 会社GAS → Claude。APIキーはここには無い） ----------
-   送るもの：鍵の SHA-256（16進）・質問・直近3往復。やりとりはこの画面の中だけに持つ（端末にも残さない） */
-if (key && window.crypto && crypto.subtle) {
+/* ---------- AIに質問（ページ → 会社GAS → Claude。APIキーはここには無い） ----------
+   鍵なしで出す（2026/11/19 岸田さんの指示「店長しか開かないので」）。歯止めは GAS 側の1日の回数の上限
+   送るもの：質問・直近3往復。やりとりはこの画面の中だけに持つ（端末にも残さない） */
+{
   const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
   const btn = el('button', 'ask-btn', 'AIに質問'); btn.type = 'button';
   const box = el('section', 'ask'); box.hidden = true; box.setAttribute('aria-label', 'AIに質問');
@@ -473,8 +474,7 @@ if (key && window.crypto && crypto.subtle) {
   form.append(input, send); box.append(head, log, form); document.body.append(btn, box); document.body.classList.add('has-ask');
 
   const pairs = [];   // [[質問, 答え], …] うまく答えが返った分だけ
-  let busy = false, khP = null;
-  const kh = () => khP || (khP = crypto.subtle.digest('SHA-256', new TextEncoder().encode(key)).then((b) => [...new Uint8Array(b)].map((x) => x.toString(16).padStart(2, '0')).join('')));
+  let busy = false;
   const add = (cls, text) => { const m = el('div', 'm ' + cls, text); log.append(m); log.scrollTop = log.scrollHeight; return m; };
   const open = (on) => { box.hidden = !on; btn.hidden = on; if (on) { fit(); input.focus(); } else btn.focus(); };
   /* スマホでキーボードが出ても入力欄が隠れないよう、見えている範囲に合わせる */
@@ -501,12 +501,12 @@ if (key && window.crypto && crypto.subtle) {
       let j;
       if (DEMO) { await new Promise((r) => setTimeout(r, 600)); j = { ok: true, a: '（見本）ここに AI の答えが出ます。見本の画面では、実際には質問を送りません。' }; }
       else {
-        j = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ action: 'storeAsk', kh: await kh(), q, hist: pairs.slice(-3) }) }).then((r) => r.json());
+        j = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ action: 'storeAsk', q, hist: pairs.slice(-3) }) }).then((r) => r.json());
       }
       if (j && j.ok && j.a) { w.className = 'm a'; w.textContent = j.a; if (!j.prep && !j.limit) pairs.push([q, j.a]); }
       else {
         w.className = 'm a err';
-        w.textContent = j && j.error === 'not allowed' ? 'この端末の鍵では、AIに質問できません。スタッフページのQRから開き直してください。' : 'うまく答えられませんでした。少し待って、もう一度送ってください。' + (j && j.error ? '（' + String(j.error).slice(0, 40) + '）' : '');
+        w.textContent = 'うまく答えられませんでした。少し待って、もう一度送ってください。' + (j && j.error ? '（' + String(j.error).slice(0, 40) + '）' : '');
       }
     } catch (err) {
       w.className = 'm a err'; w.textContent = '通信できませんでした。電波を確かめて、もう一度送ってください。';

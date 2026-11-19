@@ -71,6 +71,26 @@
   .pscore i{grid-column:1 / -1;height:4px;background:var(--line);display:block;overflow:hidden}
   .pscore em{display:block;height:100%;background:var(--sun)}
   .src{font-size:11px;color:var(--muted);padding:0 18px 14px;line-height:1.7}
+  /* AIに質問（鍵があるときだけ出る。右下のボタン → 小さなチャット欄） */
+  .ask-btn{position:fixed;right:max(14px,env(safe-area-inset-right));bottom:calc(env(safe-area-inset-bottom) + 14px);z-index:40;background:#000;color:#fff;border:0;border-bottom:4px solid var(--sun);padding:11px 16px 8px;font:inherit;font-size:14px;font-weight:800;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.25)}
+  .ask-btn:focus-visible,.ask input:focus-visible,.ask button:focus-visible{outline:3px solid var(--sky);outline-offset:2px}
+  .ask{position:fixed;right:max(12px,env(safe-area-inset-right));bottom:calc(env(safe-area-inset-bottom) + 12px);z-index:41;width:min(380px,calc(100vw - 24px));height:min(540px,calc(100dvh - 24px));display:flex;flex-direction:column;background:#fff;border:2px solid #000;box-shadow:0 10px 30px rgba(0,0,0,.3)}
+  .ask[hidden],.ask-btn[hidden]{display:none}
+  body.has-ask .src{padding-bottom:calc(env(safe-area-inset-bottom) + 70px)}
+  .ask-head{display:flex;align-items:center;gap:8px;background:#000;color:#fff;padding:8px 8px 8px 12px;font-size:14px;font-weight:800}
+  .ask-head .en{font-family:"Poppins","Helvetica Neue",Arial,sans-serif;font-size:10px;font-weight:600;letter-spacing:.16em;color:var(--sun)}
+  .ask-head button{margin-left:auto;background:none;border:0;color:#fff;font:inherit;font-size:13px;padding:6px 8px;cursor:pointer}
+  .ask-log{flex:1 1 auto;min-height:0;overflow-y:auto;padding:10px 12px;display:flex;flex-direction:column;gap:8px;background:var(--bg);overscroll-behavior:contain}
+  .ask-log .hint{font-size:12.5px;color:var(--muted);line-height:1.7}
+  .ask-log .m{max-width:88%;padding:7px 10px;font-size:14px;line-height:1.65;white-space:pre-wrap;overflow-wrap:anywhere}
+  .ask-log .m.q{align-self:flex-end;background:#000;color:#fff}
+  .ask-log .m.a{align-self:flex-start;background:#fff;color:var(--ink);border-left:4px solid var(--sun)}
+  .ask-log .m.wait{color:var(--muted)}
+  .ask-log .m.err{border-left-color:var(--bad);background:var(--bad-soft);color:#5c241d}
+  .ask-form{flex:0 0 auto;display:flex;gap:6px;padding:8px;border-top:1px solid var(--line);background:#fff}
+  .ask-form input{flex:1 1 auto;min-width:0;font:inherit;font-size:16px;padding:9px 10px;border:1px solid #999;border-radius:0;background:#fff;color:var(--ink)}
+  .ask-form button{flex:0 0 auto;font:inherit;font-size:14px;font-weight:800;padding:0 14px;border:0;background:var(--sun);color:#000;cursor:pointer}
+  .ask-form button:disabled{background:#ddd;color:#888;cursor:default}
   @media (max-width:1100px){
     .grid{grid-template-columns:1fr 1fr;grid-template-areas:"stage stage" "left right" "bottom bottom"}
     .bottom{grid-template-columns:1fr 1fr}
@@ -122,7 +142,7 @@
 import * as THREE from './three.module.js';
 
 /* GAS「CR 定時処理」のウェブアプリ（ルーティンチェックと同じ）。このページは鍵なしで開ける（2026/11/19 岸田さんの指示）。
-   鍵（#k=）があるときだけ、スタッフページへ戻るリンクと「今月の目標」に使う */
+   鍵（#k=）があるときだけ、スタッフページへ戻るリンクと「今月の目標」と「AIに質問」に使う */
 const API = 'https://script.google.com/macros/s/AKfycbwUIszTlRW20wetQ6KWe-MOoSWiqkJmg6SzsDgK_tmiQ0oi76U0EYqH50UyTTkkMto/exec';
 const REFRESH_MS = 60000;
 const STALE_MIN = 50;            // 取り込みがこれより古ければ「データが古い」と出す
@@ -435,6 +455,65 @@ function render() {
   const cnt = alerts.filter((a) => a[0] === 'bad' || a[0] === 'warn').length;
   $('al-count').textContent = cnt ? cnt + '件' : '';
   $('c-alerts').classList.toggle('alert', alerts.some((a) => a[0] === 'bad'));
+}
+
+/* ---------- AIに質問（鍵があるときだけ。ページ → 会社GAS → Claude。APIキーはここには無い） ----------
+   送るもの：鍵の SHA-256（16進）・質問・直近3往復。やりとりはこの画面の中だけに持つ（端末にも残さない） */
+if (key && window.crypto && crypto.subtle) {
+  const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+  const btn = el('button', 'ask-btn', 'AIに質問'); btn.type = 'button';
+  const box = el('section', 'ask'); box.hidden = true; box.setAttribute('aria-label', 'AIに質問');
+  const head = el('div', 'ask-head'); head.append(el('span', '', 'AIに質問'), el('span', 'en', 'ASK'));
+  const close = el('button', '', '閉じる'); close.type = 'button'; head.append(close);
+  const log = el('div', 'ask-log'); log.setAttribute('aria-live', 'polite');
+  log.append(el('div', 'hint', '今日の打刻・売上・賄い・口コミ・パルス・ルーティンチェックのことを聞けます。例：「いま出勤しているのは誰？」「今日の売上は目安に届きそう？」'));
+  const form = el('form', 'ask-form');
+  const input = el('input'); input.type = 'text'; input.maxLength = 500; input.placeholder = '質問を入力'; input.autocomplete = 'off'; input.enterKeyHint = 'send'; input.setAttribute('aria-label', '質問');
+  const send = el('button', '', '送信'); send.type = 'submit';
+  form.append(input, send); box.append(head, log, form); document.body.append(btn, box); document.body.classList.add('has-ask');
+
+  const pairs = [];   // [[質問, 答え], …] うまく答えが返った分だけ
+  let busy = false, khP = null;
+  const kh = () => khP || (khP = crypto.subtle.digest('SHA-256', new TextEncoder().encode(key)).then((b) => [...new Uint8Array(b)].map((x) => x.toString(16).padStart(2, '0')).join('')));
+  const add = (cls, text) => { const m = el('div', 'm ' + cls, text); log.append(m); log.scrollTop = log.scrollHeight; return m; };
+  const open = (on) => { box.hidden = !on; btn.hidden = on; if (on) { fit(); input.focus(); } else btn.focus(); };
+  /* スマホでキーボードが出ても入力欄が隠れないよう、見えている範囲に合わせる */
+  const vv = window.visualViewport;
+  const fit = () => {
+    if (!vv || box.hidden) return;
+    const under = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+    box.style.bottom = under > 0 ? (under + 8) + 'px' : '';
+    box.style.height = under > 0 ? Math.min(540, vv.height - 16) + 'px' : '';
+    log.scrollTop = log.scrollHeight;
+  };
+  if (vv) { vv.addEventListener('resize', fit); vv.addEventListener('scroll', fit); }
+  btn.addEventListener('click', () => open(true));
+  close.addEventListener('click', () => open(false));
+  box.addEventListener('keydown', (e) => { if (e.key === 'Escape') open(false); });
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const q = input.value.trim().slice(0, 500);
+    if (!q || busy) return;
+    busy = true; send.disabled = true; input.value = '';
+    add('q', q);
+    const w = add('a wait', '考えています…');
+    try {
+      let j;
+      if (DEMO) { await new Promise((r) => setTimeout(r, 600)); j = { ok: true, a: '（見本）ここに AI の答えが出ます。見本の画面では、実際には質問を送りません。' }; }
+      else {
+        j = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ action: 'storeAsk', kh: await kh(), q, hist: pairs.slice(-3) }) }).then((r) => r.json());
+      }
+      if (j && j.ok && j.a) { w.className = 'm a'; w.textContent = j.a; if (!j.prep && !j.limit) pairs.push([q, j.a]); }
+      else {
+        w.className = 'm a err';
+        w.textContent = j && j.error === 'not allowed' ? 'この端末の鍵では、AIに質問できません。スタッフページのQRから開き直してください。' : 'うまく答えられませんでした。少し待って、もう一度送ってください。' + (j && j.error ? '（' + String(j.error).slice(0, 40) + '）' : '');
+      }
+    } catch (err) {
+      w.className = 'm a err'; w.textContent = '通信できませんでした。電波を確かめて、もう一度送ってください。';
+    }
+    log.scrollTop = log.scrollHeight;
+    busy = false; send.disabled = false; input.focus();
+  });
 }
 
 try { const c = JSON.parse(store.get('miyakoStore') || 'null'); if (!DEMO && c && Date.now() - c.at < 6 * 3600e3) { D = c.d; cached = true; render(); } } catch (e) {}

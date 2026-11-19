@@ -73,8 +73,8 @@
   .src{font-size:11px;color:var(--muted);padding:0 18px 14px;line-height:1.7}
   /* AIに質問（右下のボタン → 小さなチャット欄） */
   .ask-btn{position:fixed;right:max(14px,env(safe-area-inset-right));bottom:calc(env(safe-area-inset-bottom) + 14px);z-index:40;background:#000;color:#fff;border:0;border-bottom:4px solid var(--sun);padding:11px 16px 8px;font:inherit;font-size:14px;font-weight:800;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.25)}
-  .ask-btn:focus-visible,.ask input:focus-visible,.ask button:focus-visible{outline:3px solid var(--sky);outline-offset:2px}
-  .ask{position:fixed;right:max(12px,env(safe-area-inset-right));bottom:calc(env(safe-area-inset-bottom) + 12px);z-index:41;width:min(380px,calc(100vw - 24px));height:min(540px,calc(100dvh - 24px));display:flex;flex-direction:column;background:#fff;border:2px solid #000;box-shadow:0 10px 30px rgba(0,0,0,.3)}
+  .ask-btn:focus-visible,.ask input:focus-visible,.ask button:focus-visible,.ask-log .cp:focus-visible{outline:3px solid var(--sky);outline-offset:2px}
+  .ask{position:fixed;right:max(12px,env(safe-area-inset-right));bottom:calc(env(safe-area-inset-bottom) + 12px);z-index:41;width:min(460px,calc(100vw - 24px));height:min(680px,calc(100dvh - 24px));display:flex;flex-direction:column;background:#fff;border:2px solid #000;box-shadow:0 10px 30px rgba(0,0,0,.3)}
   .ask[hidden],.ask-btn[hidden]{display:none}
   body.has-ask .src{padding-bottom:calc(env(safe-area-inset-bottom) + 70px)}
   .ask-head{display:flex;align-items:center;gap:8px;background:#000;color:#fff;padding:8px 8px 8px 12px;font-size:14px;font-weight:800}
@@ -86,6 +86,10 @@
   .ask-log .m.q{align-self:flex-end;background:#000;color:#fff}
   .ask-log .m.a{align-self:flex-start;background:#fff;color:var(--ink);border-left:4px solid var(--sun)}
   .ask-log .m.wait{color:var(--muted)}
+  .ask-quick{display:flex;flex-wrap:wrap;gap:6px}
+  .ask-quick button,.ask-log .cp{font:inherit;font-size:12.5px;font-weight:700;padding:6px 10px;border:1px solid #000;border-radius:0;background:#fff;color:#000;cursor:pointer}
+  .ask-quick button:disabled{border-color:#bbb;color:#999;cursor:default}
+  .ask-log .cp{align-self:flex-start;margin-top:-4px;font-weight:500;border-color:#999;padding:3px 9px}
   .ask-log .m.err{border-left-color:var(--bad);background:var(--bad-soft);color:#5c241d}
   .ask-form{flex:0 0 auto;display:flex;gap:6px;padding:8px;border-top:1px solid var(--line);background:#fff}
   .ask-form input{flex:1 1 auto;min-width:0;font:inherit;font-size:16px;padding:9px 10px;border:1px solid #999;border-radius:0;background:#fff;color:var(--ink)}
@@ -467,7 +471,16 @@ function render() {
   const head = el('div', 'ask-head'); head.append(el('span', '', 'AIに質問'), el('span', 'en', 'ASK'));
   const close = el('button', '', '閉じる'); close.type = 'button'; head.append(close);
   const log = el('div', 'ask-log'); log.setAttribute('aria-live', 'polite');
-  log.append(el('div', 'hint', '今日の打刻・売上・賄い・口コミ・パルス・ルーティンチェックのことを聞けます。例：「いま出勤しているのは誰？」「今日の売上は目安に届きそう？」'));
+  log.append(el('div', 'hint', '今日の打刻・売上・賄い・口コミ・パルス・ルーティンチェックと、今月・先月の日報（売上・客数・人件費・客層・営業メモ）のことを聞けます。資料の下書きも作れます（原価・利益・商品別の数字は入っていません）。'));
+  /* よく使う頼みごと。押すとそのまま送る */
+  const QUICK = [
+    ['今月のここまで', '今月ここまでの売上・客数・客単価・人件費率を、目標と前年に比べて短くまとめて。'],
+    ['業績検討会の下書き', '業績検討会の資料の下書きを作って。先月の振り返りを中心に、要点3つ、決めたいこと、売上・客数（目標比・前年比・前半と後半・曜日別）、人件費（人件費率・労働時間・売上/時間）、お客様の層、今月ここまでの状況と見通し、の順で。'],
+    ['定例MTGの下書き', '定例MTGの資料の下書きを作って。今月ここまでの数字（目標比・着地見込み）、先月との違い、営業メモから読める気づき、次にやること、の順で。']
+  ];
+  const quick = el('div', 'ask-quick');
+  QUICK.forEach(([label, text]) => { const b = el('button', '', label); b.type = 'button'; b.addEventListener('click', () => ask(text)); quick.append(b); });
+  log.append(quick);
   const form = el('form', 'ask-form');
   const input = el('input'); input.type = 'text'; input.maxLength = 500; input.placeholder = '質問を入力'; input.autocomplete = 'off'; input.enterKeyHint = 'send'; input.setAttribute('aria-label', '質問');
   const send = el('button', '', '送信'); send.type = 'submit';
@@ -483,27 +496,37 @@ function render() {
     if (!vv || box.hidden) return;
     const under = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
     box.style.bottom = under > 0 ? (under + 8) + 'px' : '';
-    box.style.height = under > 0 ? Math.min(540, vv.height - 16) + 'px' : '';
+    box.style.height = under > 0 ? Math.min(680, vv.height - 16) + 'px' : '';
     log.scrollTop = log.scrollHeight;
   };
   if (vv) { vv.addEventListener('resize', fit); vv.addEventListener('scroll', fit); }
   btn.addEventListener('click', () => open(true));
   close.addEventListener('click', () => open(false));
   box.addEventListener('keydown', (e) => { if (e.key === 'Escape') open(false); });
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const q = input.value.trim().slice(0, 500);
+  const lock = (on) => { busy = on; send.disabled = on; quick.querySelectorAll('button').forEach((b) => { b.disabled = on; }); };
+  const copy = async (text, b) => {
+    let ok = false;
+    try { await navigator.clipboard.writeText(text); ok = true; }
+    catch (e) { try { const t = el('textarea'); t.value = text; t.style.position = 'fixed'; t.style.opacity = '0'; document.body.append(t); t.select(); ok = document.execCommand('copy'); t.remove(); } catch (e2) {} }
+    b.textContent = ok ? 'コピーしました' : 'コピーできませんでした'; setTimeout(() => { b.textContent = 'コピー'; }, 1800);
+  };
+  form.addEventListener('submit', (e) => { e.preventDefault(); const q = input.value.trim(); if (q && !busy) { input.value = ''; ask(q); } });
+  async function ask(text) {
+    const q = String(text).trim().slice(0, 500);
     if (!q || busy) return;
-    busy = true; send.disabled = true; input.value = '';
+    lock(true);
     add('q', q);
-    const w = add('a wait', '考えています…');
+    const w = add('a wait', '考えています…（資料の下書きは30秒ほどかかります）');
     try {
       let j;
       if (DEMO) { await new Promise((r) => setTimeout(r, 600)); j = { ok: true, a: '（見本）ここに AI の答えが出ます。見本の画面では、実際には質問を送りません。' }; }
       else {
         j = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ action: 'storeAsk', q, hist: pairs.slice(-3) }) }).then((r) => r.json());
       }
-      if (j && j.ok && j.a) { w.className = 'm a'; w.textContent = j.a; if (!j.prep && !j.limit) pairs.push([q, j.a]); }
+      if (j && j.ok && j.a) {
+        w.className = 'm a'; w.textContent = j.a;
+        if (!j.prep && !j.limit) { pairs.push([q, j.a]); const c = el('button', 'cp', 'コピー'); c.type = 'button'; c.addEventListener('click', () => copy(j.a, c)); w.after(c); }
+      }
       else {
         w.className = 'm a err';
         w.textContent = 'うまく答えられませんでした。少し待って、もう一度送ってください。' + (j && j.error ? '（' + String(j.error).slice(0, 40) + '）' : '');
@@ -511,9 +534,9 @@ function render() {
     } catch (err) {
       w.className = 'm a err'; w.textContent = '通信できませんでした。電波を確かめて、もう一度送ってください。';
     }
-    log.scrollTop = log.scrollHeight;
-    busy = false; send.disabled = false; input.focus();
-  });
+    log.scrollTop = Math.max(0, w.offsetTop - log.offsetTop - 8);   /* 長い答えは頭から読めるように */
+    lock(false); input.focus();
+  }
 }
 
 try { const c = JSON.parse(store.get('miyakoStore') || 'null'); if (!DEMO && c && Date.now() - c.at < 6 * 3600e3) { D = c.d; cached = true; render(); } } catch (e) {}

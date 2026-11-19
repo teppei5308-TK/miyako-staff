@@ -28,9 +28,6 @@
   #pins{position:absolute;inset:0;pointer-events:none}
   .pin{position:absolute;left:0;top:0;will-change:transform}
   .pin>span{display:inline-flex;align-items:center;gap:4px;transform:translate(-50%,-100%);background:#fff;border:2px solid var(--c,#999);color:#111;padding:1px 7px;font-size:11.5px;font-weight:700;box-shadow:0 2px 6px rgba(0,0,0,.15);white-space:nowrap}
-  .pin.t-in>span{background:var(--coral);border-color:var(--coral);color:#fff}
-  .pin.t-up>span{background:var(--sun-soft);border-color:var(--sun);color:#5a3d00}
-  .pin.t-free>span{background:rgba(255,255,255,.85);border-color:#cfc7b8;color:#777;font-weight:500}
   .pin.staff>span{background:#000;border-color:#000;color:#fff;font-weight:600;font-size:11px}
   .pin.area>span{background:#fff;border-color:#000}
   .pin.alert>span{border-color:var(--bad);animation:pulse 1.3s infinite}
@@ -65,14 +62,8 @@
   .nums div{background:#f7f5ef;padding:7px 2px}
   .nums b{display:block;font-size:19px;color:var(--ink);font-family:"Poppins","Helvetica Neue",Arial,sans-serif;font-weight:600}
   .nums span{font-size:11px;color:var(--muted)}
-  .rank{list-style:none;margin:0;padding:0;font-size:13px}
-  .rank li{display:grid;grid-template-columns:20px 1fr auto;gap:6px;align-items:baseline;padding:4px 0;border-top:1px solid var(--line)}
-  .rank li:first-child{border-top:0}
-  .rank .no{font-family:"Poppins","Helvetica Neue",Arial,sans-serif;font-weight:600;color:var(--sun-ink);text-align:right}
-  .rank .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink)}
-  .rank .ct{font-variant-numeric:tabular-nums;color:var(--ink2);white-space:nowrap;font-size:12px}
-  .rank .rb{grid-column:2 / span 2;height:4px;background:var(--line);overflow:hidden}
-  .rank .rb i{display:block;height:100%;background:var(--sun)}
+  .stars{color:var(--sun);letter-spacing:1px;font-size:13px}
+  .stars.low{color:var(--bad)}
   .pscore{display:grid;grid-template-columns:repeat(3,1fr);gap:6px 10px}
   .pscore div{display:grid;grid-template-columns:1fr auto;align-items:baseline;font-size:12.5px}
   .pscore b{font-family:"Poppins","Helvetica Neue",Arial,sans-serif;font-weight:600;font-size:16px;color:var(--ink)}
@@ -89,7 +80,6 @@
     .grid{grid-template-columns:1fr;grid-template-areas:"stage" "left" "right" "bottom";padding:10px 12px 16px}
     .bottom{grid-template-columns:1fr}
     .stage{min-height:104vw}
-    .pin.t-free>span{padding:0 3px;font-size:9px}
     .top{padding-left:12px;padding-right:12px}
     .pin>span{font-size:10px;padding:0 5px}
     .src{padding:0 12px 14px}
@@ -117,7 +107,7 @@
 
   <div class="col right">
     <section class="card" id="c-sales"><h2>今日の売上<span class="en">Sales</span><span class="r">dinii・税抜</span></h2><div id="sales" class="mut">—</div></section>
-    <section class="card"><h2>売れ筋 TOP10<span class="r" id="mn-date">dinii</span></h2><ol class="rank" id="menu"><li class="mut">—</li></ol></section>
+    <section class="card"><h2>今日の口コミ<span class="en">Reviews</span><span class="r" id="rv-count"></span></h2><ul class="rows" id="reviews"><li class="mut">—</li></ul></section>
   </div>
 
   <div class="bottom">
@@ -289,7 +279,7 @@ function demoData() {
     sales: { at, data: { total: 286400, guests: 71, groups: 29, avg: 4034, month: 6920000, asof: at } },
     makanai: { at, data: [{ n: '（見本）ランチD', a: '食べた', c: 0 }] },
     pulse: { at, data: { month: n.getMonth() + 1, n: 6, scores: [['シフト', 4.7], ['人手', 3.7], ['持ち場', 4.7], ['相談', 4.3], ['成長', 4.0], ['接客', 4.0]], note: '（見本）いちばん低いのは「人手」です。', voices: [['（見本）忙しい日でも、シフト通りの時間で上がれるようにしてほしい', '検討中：金土の人数を1人増やす'], ['（見本）足りない備品がそのままになっている', '']], thanks: ['（見本）スタッフみんなへの「ありがとう」が届きました'], next: '来月1日〜7日' } },
-    menu: { at, data: { date: ymd(n), items: [['タン塩', 16, 30080], ['ファミリーセット', 5, 27500], ['おすすめ3種盛り合わせ', 7, 22960], ['タレ漬けカルビ', 16, 18880], ['ハラミ', 9, 13320], ['生ビール・オリオン', 22, 12760]] } },
+    reviews: { at, data: { date: ymd(n), items: [[5, 'Google', '（見本）お肉がおいしく、スタッフの説明も丁寧でした。また来たいです', '', 1], [4, 'Google', '（見本）ランチの量と値段に満足。提供が少しゆっくりでした', '', 0], [2, '食べログ', '（見本）混んでいて、席に案内されるまで待ちました', '', 0]] } },
     routine: { hall_open: { time: T(-360), who: '（見本）ホールB', done: 13, total: 13, missing: '' }, kitchen_open: { time: T(-355), who: '（見本）キッチンA', done: 6, total: 7, missing: 'お米準備' } } };
 }
 async function load() {
@@ -389,13 +379,18 @@ function render() {
     $('mo-note').textContent = sl && sl.month ? '今日の分まで・税抜' : '昨日まで・税抜';
   }
 
-  /* ---- 売れ筋（dinii の商品分析。当日分はすぐには入らないので、出ている中でいちばん新しい日） ---- */
-  const mn = D.menu && D.menu.data;
-  if (!mn || !(mn.items || []).length) { $('menu').innerHTML = '<li class="mut">売れ筋はまだ取り込まれていません</li>'; $('mn-date').textContent = 'dinii'; }
+  /* ---- 今日の口コミ（[★, サイト名, 日本語の要約, '', 返信済み1/0]。投稿者の名前は出さない） ---- */
+  const rv = D.reviews && D.reviews.data;
+  if (!rv) { $('reviews').innerHTML = '<li class="mut">口コミはまだ取り込まれていません</li>'; $('rv-count').textContent = ''; }
   else {
-    const mx = Math.max.apply(null, mn.items.map((x) => x[2])) || 1;
-    $('menu').innerHTML = mn.items.map((x, i) => '<li><span class="no">' + (i + 1) + '</span><span class="nm" title="' + esc(x[0]) + '">' + esc(x[0]) + '</span><span class="ct">' + x[1] + '個・' + yen(x[2]) + '</span><span class="rb"><i style="width:' + Math.round(x[2] / mx * 100) + '%"></i></span></li>').join('');
-    $('mn-date').textContent = (+mn.date.slice(5, 7)) + '/' + (+mn.date.slice(8, 10)) + ' の分・売上順・税抜' + (mn.date !== biz ? '（今日の分はまだ）' : '');
+    const its = rv.items || [], other = rv.date && rv.date !== biz ? '（' + (+rv.date.slice(5, 7)) + '/' + (+rv.date.slice(8, 10)) + ' の分）' : '';
+    if (!its.length) { $('reviews').innerHTML = '<li class="mut">今日の口コミはまだありません</li>'; $('rv-count').textContent = '0件' + other; }
+    else {
+      const star = (v) => { const k = Math.max(1, Math.min(5, Math.round(Number(v) || 0))); return '★★★★★'.slice(0, k) + '☆☆☆☆☆'.slice(0, 5 - k); };
+      const avg = its.reduce((a2, x) => a2 + (Number(x[0]) || 0), 0) / its.length;
+      $('reviews').innerHTML = its.map((x) => '<li><span><span class="stars' + (Number(x[0]) <= 2 ? ' low' : '') + '">' + star(x[0]) + '</span> <span class="mut">' + esc(x[1] || '') + '</span>' + (Number(x[4]) ? '' : ' <span class="badge warn">未返信</span>') + '<br>' + esc(x[2] || '（本文なし）') + '</span></li>').join('');
+      $('rv-count').textContent = its.length + '件・平均 ★' + avg.toFixed(1) + other;
+    }
   }
 
   /* ---- パルスの声（月次アンケートのまとめ。スタッフ向けに作ってある部分だけ。1件ずつの原文・名前は出さない） ---- */
@@ -428,10 +423,10 @@ function render() {
   }
 
   /* ---- データの新しさ ---- */
-  const parts = [['staff', 'らくしふ'], ['sales', 'dinii'], ['makanai', '賄い（kintone）']], menuAt = D.menu && D.menu.at ? '／売れ筋 ' + D.menu.at.slice(11) : '';
+  const parts = [['staff', 'らくしふ'], ['sales', 'dinii'], ['makanai', '賄い（kintone）']], reviewsAt = D.reviews && D.reviews.at ? '／口コミ ' + D.reviews.at.slice(11) : '';
   const active = on > 0 || (nm >= 600 && nm <= 1440);
   parts.forEach(([k, name]) => { const a = ageMin(D[k]); if (!DEMO && active && (a == null || a > STALE_MIN)) alerts.push(['warn', name + ' のデータが' + (a == null ? '今日はまだ取り込まれていません' : a + '分前のままです（取り込みが止まっているかもしれません）')]); });
-  $('src').innerHTML = 'データの元と、読んだ時刻：' + parts.map(([k, name]) => name + ' ' + esc(atHm(D[k]))).join('／') + esc(menuAt) + '／ルーティンチェックは今の状態。お客様の名前や連絡先は、この画面には出しません。';
+  $('src').innerHTML = 'データの元と、読んだ時刻：' + parts.map(([k, name]) => name + ' ' + esc(atHm(D[k]))).join('／') + esc(reviewsAt) + '／ルーティンチェックは今の状態。お客様の名前や連絡先は、この画面には出しません。';
 
   /* ---- やり残し ---- */
   PIN.reg.sp.textContent = 'レジ ' + (sl ? yen(sl.total) : '');

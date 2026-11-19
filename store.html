@@ -279,7 +279,7 @@ function demoData() {
     sales: { at, data: { total: 286400, guests: 71, groups: 29, avg: 4034, month: 6920000, asof: at } },
     makanai: { at, data: [{ n: '（見本）ランチD', a: '食べた', c: 0 }] },
     pulse: { at, data: { month: n.getMonth() + 1, n: 6, scores: [['シフト', 4.7], ['人手', 3.7], ['持ち場', 4.7], ['相談', 4.3], ['成長', 4.0], ['接客', 4.0]], note: '（見本）いちばん低いのは「人手」です。', voices: [['（見本）忙しい日でも、シフト通りの時間で上がれるようにしてほしい', '検討中：金土の人数を1人増やす'], ['（見本）足りない備品がそのままになっている', '']], thanks: ['（見本）スタッフみんなへの「ありがとう」が届きました'], next: '来月1日〜7日' } },
-    reviews: { at, data: { date: ymd(n), items: [[5, 'Google', '（見本）お肉がおいしく、スタッフの説明も丁寧でした。また来たいです', '', 1], [4, 'Google', '（見本）ランチの量と値段に満足。提供が少しゆっくりでした', '', 0], [2, '食べログ', '（見本）混んでいて、席に案内されるまで待ちました', '', 0]] } },
+    reviews: { at, data: { date: ymd(n), items: [[5, 'Google', '（見本）お肉がおいしく、スタッフの説明も丁寧でした。また来たいです', '', 1, T(-190)], [4, 'Google', '（見本）ランチの量と値段に満足。提供が少しゆっくりでした', '', 0, T(-95)], [2, 'Google', '（見本）混んでいて、席に案内されるまで待ちました', '', 0, T(-20)]] } },
     routine: { hall_open: { time: T(-360), who: '（見本）ホールB', done: 13, total: 13, missing: '' }, kitchen_open: { time: T(-355), who: '（見本）キッチンA', done: 6, total: 7, missing: 'お米準備' } } };
 }
 async function load() {
@@ -379,7 +379,7 @@ function render() {
     $('mo-note').textContent = sl && sl.month ? '今日の分まで・税抜' : '昨日まで・税抜';
   }
 
-  /* ---- 今日の口コミ（[★, サイト名, 日本語の要約, '', 返信済み1/0]。投稿者の名前は出さない） ---- */
+  /* ---- 今日の口コミ（[★, サイト名, 日本語の要約, '', 返信済み1/0, 届いた時刻 'HH:MM']。投稿者の名前は出さない） ---- */
   const rv = D.reviews && D.reviews.data;
   if (!rv) { $('reviews').innerHTML = '<li class="mut">口コミはまだ取り込まれていません</li>'; $('rv-count').textContent = ''; }
   else {
@@ -388,7 +388,7 @@ function render() {
     else {
       const star = (v) => { const k = Math.max(1, Math.min(5, Math.round(Number(v) || 0))); return '★★★★★'.slice(0, k) + '☆☆☆☆☆'.slice(0, 5 - k); };
       const avg = its.reduce((a2, x) => a2 + (Number(x[0]) || 0), 0) / its.length;
-      $('reviews').innerHTML = its.map((x) => '<li><span><span class="stars' + (Number(x[0]) <= 2 ? ' low' : '') + '">' + star(x[0]) + '</span> <span class="mut">' + esc(x[1] || '') + '</span>' + (Number(x[4]) ? '' : ' <span class="badge warn">未返信</span>') + '<br>' + esc(x[2] || '（本文なし）') + '</span></li>').join('');
+      $('reviews').innerHTML = its.map((x) => '<li><span><span class="stars' + (Number(x[0]) <= 2 ? ' low' : '') + '">' + star(x[0]) + '</span> <span class="mut">' + esc(x[1] || '') + (x[5] ? '・' + esc(String(x[5]).slice(0, 12)) : '') + '</span>' + (Number(x[4]) ? '' : ' <span class="badge warn">未返信</span>') + '<br>' + esc(x[2] || '（本文なし）') + '</span></li>').join('');
       $('rv-count').textContent = its.length + '件・平均 ★' + avg.toFixed(1) + other;
     }
   }
